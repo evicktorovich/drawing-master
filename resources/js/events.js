@@ -175,22 +175,6 @@ export const events = [
         modalIncludes: null,
         modalDiscount: null,
     },
-    {
-        id: 12,
-        eventName: 'BLOSSOM GARDEN ACRYLIC CLASS',
-        startDate: null,
-        date: '2026-04-29',
-        time: '6:00 pm - 9:00 pm',
-        day: null,
-        price: 78,
-        selected: false,
-        location: '1324 11 Ave SW, #202, Calgary',
-        description: 'Beginner-friendly. All supplies provided',
-        img: 'IMG_44L86.PNG',
-        modalDescription: 'Paint a blooming spring garden filled with delicate blossoms, vibrant colors, and lively textures. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.',
-        modalIncludes: null,
-        modalDiscount: null,
-     },
 ];
 
 export const infinityEvent = [
