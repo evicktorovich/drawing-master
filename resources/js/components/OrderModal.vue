@@ -76,22 +76,33 @@
                                     <div class="cancellation-tooltip">
                                         <p>
                                             At Shuhai Art Studio, we strive to create a welcoming and well-prepared
-                                            experience for every participant.
-                                            To ensure fairness and to cover the costs involved in preparing for each
-                                            class, we kindly ask you to review our cancellation terms:
+                                            experience for every participant. To ensure fairness and to cover the
+                                            costs involved in preparing each class, the following cancellation
+                                            policy applies:
                                         </p>
                                         <ul>
-                                            <li>Cancellations 2 or more days before the workshop – a refund will be
-                                                issued minus 20% to cover materials and administrative expenses.</li>
-                                            <li>For cancellations made 24 hours before the start of the workshop, 50% of
-                                                the payment will be retained, as materials and studio preparation have
-                                                already been arranged.
+                                            <li>
+                                                Cancellations or rescheduling requests made 48 hours or more before
+                                                the workshop will receive a refund minus 20% to cover materials and
+                                                administrative expenses.
                                             </li>
-                                            <li>Same-day cancellations or no-shows – the payment is non-refundable, as
-                                                your reserved spot and materials cannot be reassigned.</li>
+                                            <li>
+                                                Cancellations or rescheduling requests made within 48 hours of the
+                                                workshop will result in 50% of the payment being retained, as
+                                                materials and studio preparation have already been arranged.
+                                            </li>
+                                            <li>
+                                                Same-day cancellations, no-shows, or rescheduling requests on the
+                                                day of the workshop are non-refundable, as your reserved spot and
+                                                materials cannot be reassigned.
+                                            </li>
                                         </ul>
-                                        <p class="mb-0">We appreciate your understanding and continued support of our
-                                            studio.</p>
+                                        <p>
+                                            Please note that payment processing fees are non-refundable.
+                                        </p>
+                                        <p class="mb-0">
+                                            We appreciate your understanding and continued support of our studio.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
