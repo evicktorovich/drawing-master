@@ -137,7 +137,7 @@ export const infinityEvent = [
         day: 'Monday - Friday',
         price: 75,
         selected: false,
-        location: 'IN ART Studio, 1324 11 Ave SW, #202, Calgary',
+        location: '1324 11 Ave SW, #202, Calgary',
         description: 'All supplies provided',
         img: 'adults.JPG',
         modalDescription: "Creativity, dreams, inspiration - the world of art awaits you! We practice a variety of techniques, materials and subjects in our classes. ",
