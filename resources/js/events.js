@@ -227,7 +227,7 @@ export const events = [
         id: 15,
         eventName: 'AT THE FOREST EDGE ACRYLIC CLASS',
         startDate: null,
-        date: '2026-06-24',
+        date: '2026-06-26',
         time: '6:00 pm - 9:00 pm',
         day: null,
         price: 84,
