@@ -252,13 +252,10 @@ export const events = [
         img: 'Post.jpg',
         modalDescription: 'Learn how to paint expressive, realistic flowers in acrylics through a modern step-by-step approach designed for beginners and intermediate artists alike.' +
             '<div class="modal-body-description-bold">\n' +
-            '                                In this course you will learn:how to convey the depth and texture of water, clouds, mountains, and various trees; special techniques of working with acrylic paints; painting using various tools to create realistic natural images.\n' ,
+            '                               Throughout this 5-week course, you’ll explore color mixing, light and shadow, soft petal transitions, texture, and depth while creating beautiful floral paintings on canvas. No previous experience needed — just a love for creativity and flowers.\n' ,
         modalIncludes: null,
         modalDiscount: null,
     },
-
-
-
 ];
 
 export const infinityEvent = [
