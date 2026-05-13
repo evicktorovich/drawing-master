@@ -283,7 +283,7 @@ export const infinityEvent = [
         price: 75,
         selected: false,
         location: '1324 11 Ave SW, #202, Calgary',
-        description: 'All supplies provided',
+        description: 'TEMPORARILY UNAVAILABLE',
         img: 'adults.JPG',
         modalDescription: "Creativity, dreams, inspiration - the world of art awaits you! We practice a variety of techniques, materials and subjects in our classes. ",
         modalIncludes: null,
