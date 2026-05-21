@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
+use App\Services\MetaCapi;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -147,10 +148,27 @@ class PaymentController extends Controller
                 'amount'     => $validated['price'],
             ]);
 
+            $capiEventId = MetaCapi::generateEventId();
+            MetaCapi::sendEvent(
+                eventName: 'InitiateCheckout',
+                eventId: $capiEventId,
+                userData: MetaCapi::userContextFromRequest($request),
+                customData: [
+                    'value'        => (float) $validated['price'],
+                    'currency'     => 'CAD',
+                    'content_name' => $validated['eventName'],
+                    'content_ids'  => [(string) $validated['eventId']],
+                    'content_type' => 'product',
+                    'num_items'    => 1,
+                ],
+                eventSourceUrl: $request->header('referer') ?: 'https://art-shuhai.com/',
+            );
+
             return response()->json([
                 'sessionId'   => $session->id,
                 'checkoutUrl' => $session->url,
                 'leadId'      => $lead->id,
+                'eventId'     => $capiEventId,
                 'debug'       => [
                     'mode'     => $session->livemode ? 'live' : 'test',
                     'metadata' => $metadata,

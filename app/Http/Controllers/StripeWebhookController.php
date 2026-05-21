@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
+use App\Services\MetaCapi;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -57,6 +58,30 @@ class StripeWebhookController extends Controller
             ]);
 
             $this->sendTelegramMessage($lead, $session, 'paid');
+
+            // event_id = Stripe session id → matches the dataLayer 'purchase' push
+            // fired on /thank-you, so Meta dedupes browser pixel + server event.
+            $nameParts = preg_split('/\s+/', trim((string) $lead->name), 2);
+            MetaCapi::sendEvent(
+                eventName: 'Purchase',
+                eventId: $session->id,
+                userData: [
+                    'email'      => $lead->email,
+                    'phone'      => $lead->phone,
+                    'first_name' => $nameParts[0] ?? null,
+                    'last_name'  => $nameParts[1] ?? null,
+                    'country'    => 'ca',
+                ],
+                customData: [
+                    'value'        => (float) ($session->amount_total / 100),
+                    'currency'     => strtoupper($session->currency ?: 'cad'),
+                    'content_name' => $lead->event_name,
+                    'content_ids'  => $lead->event_id ? [(string) $lead->event_id] : [],
+                    'content_type' => 'product',
+                    'order_id'     => $session->id,
+                ],
+                eventSourceUrl: config('app.frontend_url') . '/thank-you',
+            );
         }
 
         return response('Webhook handled', 200);

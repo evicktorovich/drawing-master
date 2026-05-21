@@ -50,25 +50,32 @@ export default {
                 message: this.message,
             };
 
-            await fetch('/api/contact', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(contactData),
-            })
-                .then(response => {
-                    if (response.ok) {
-                        window.location.href = '/thank-you';
-                    } else {
-                        console.error('Ошибка при отправке данных:', response.statusText);
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка:', error);
+            try {
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(contactData),
                 });
 
-            this.loading = false;
+                if (response.ok) {
+                    let eventId;
+                    try { eventId = (await response.json()).event_id; } catch (e) {}
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        event: 'lead_submit',
+                        event_id: eventId,
+                        form_name: 'contact_form',
+                    });
+                    // Brief delay so GTM tags (Pixel + GA) flush before navigation.
+                    setTimeout(() => { window.location.href = '/thank-you'; }, 250);
+                    return;
+                }
+                console.error('Ошибка при отправке данных:', response.statusText);
+            } catch (error) {
+                console.error('Ошибка:', error);
+            } finally {
+                this.loading = false;
+            }
         }
     },
 };

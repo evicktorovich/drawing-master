@@ -228,7 +228,23 @@ export default {
                 throw new Error(errorData.message || 'Payment session error');
             }
 
-            return await response.json();
+            const json = await response.json();
+
+            // Fire begin_checkout *before* Stripe redirect so Pixel/GA register
+            // intent even if the user never returns from Stripe. event_id matches
+            // the CAPI InitiateCheckout event for dedup.
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                event: 'begin_checkout',
+                event_id: json.eventId,
+                value: Number(this.selectedEvent.price),
+                currency: 'CAD',
+                content_name: this.selectedEvent.eventName,
+                content_ids: [String(this.selectedEvent.id)],
+                num_items: 1,
+            });
+
+            return json;
         }
     },
     async mounted() {
