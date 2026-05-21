@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\MetaCapi;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 
@@ -17,7 +18,18 @@ class ContactController extends Controller
 
         $this->sendMessageToTelegram($validated);
 
-        return response()->json(['message' => 'Lead created successfully'], 201);
+        $eventId = MetaCapi::generateEventId();
+        MetaCapi::sendEvent(
+            eventName: 'Lead',
+            eventId: $eventId,
+            userData: MetaCapi::userContextFromRequest($request),
+            eventSourceUrl: $request->header('referer') ?: 'https://art-shuhai.com/',
+        );
+
+        return response()->json([
+            'message'  => 'Lead created successfully',
+            'event_id' => $eventId,
+        ], 201);
     }
 
     private function sendMessageToTelegram($data)
