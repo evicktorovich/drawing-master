@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="facebook-domain-verification" content="5te71m0zbc6lwtrbw9cp3z5ih99nf7" />
         <title>Art Classes with Alevtyna</title>
         <meta name="description" content="Unlock creativity with inspiring art workshops for all skill levels.">
         <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
