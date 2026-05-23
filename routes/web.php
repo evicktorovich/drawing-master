@@ -21,8 +21,9 @@ Route::get('/thank-you', function () {
     return view('thank-you-page');
 });
 
-// CMS admin (session-auth, server holds GitHub token)
-Route::prefix('admin')->group(function () {
+// CMS admin (session-auth, server holds GitHub token).
+// Note: prefix is /cms (not /admin) to avoid conflict with the static UI in public/admin/.
+Route::prefix('cms')->group(function () {
     Route::post('/login',  [\App\Http\Controllers\AdminCmsController::class, 'login']);
     Route::post('/logout', [\App\Http\Controllers\AdminCmsController::class, 'logout']);
     Route::get('/status',  [\App\Http\Controllers\AdminCmsController::class, 'status']);

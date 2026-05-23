@@ -458,7 +458,7 @@ createApp({
     // ---- auth ----
     async function checkAuth() {
       try {
-        const r = await api('GET', '/admin/status');
+        const r = await api('GET', '/cms/status');
         authed.value = !!r.authed;
         if (authed.value) await loadContent();
       } catch {}
@@ -469,7 +469,7 @@ createApp({
       loggingIn.value = true;
       loginError.value = '';
       try {
-        await api('POST', '/admin/login', { json: { password: passwordInput.value } });
+        await api('POST', '/cms/login', { json: { password: passwordInput.value } });
         authed.value = true;
         passwordInput.value = '';
         await loadContent();
@@ -482,7 +482,7 @@ createApp({
 
     async function logout() {
       if (dirty.value && !confirm('You have unsaved changes. Sign out anyway?')) return;
-      try { await api('POST', '/admin/logout'); } catch {}
+      try { await api('POST', '/cms/logout'); } catch {}
       authed.value = false;
       content.value = null;
       loaded.value = false;
@@ -495,7 +495,7 @@ createApp({
       loaded.value = false;
       loadError.value = '';
       try {
-        const r = await api('GET', '/admin/load');
+        const r = await api('GET', '/cms/load');
         content.value = r.content;
         sha.value = r.sha;
         loaded.value = true;
@@ -515,7 +515,7 @@ createApp({
       if (!dirty.value || saving.value) return;
       saving.value = true;
       try {
-        const r = await api('POST', '/admin/save', { json: { content: content.value, sha: sha.value } });
+        const r = await api('POST', '/cms/save', { json: { content: content.value, sha: sha.value } });
         sha.value = r.sha;
         dirty.value = false;
         status.value = { type: 'saved' };
@@ -532,7 +532,7 @@ createApp({
     async function uploadImage(file) {
       const form = new FormData();
       form.append('image', file);
-      const r = await api('POST', '/admin/upload', { form });
+      const r = await api('POST', '/cms/upload', { form });
       return r.url.replace(/^\//, ''); // store without leading slash
     }
 
