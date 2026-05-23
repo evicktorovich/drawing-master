@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shuhai Art Studio · Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --peach:#FFB785; --peach-deep:#FFA769; --ink:#1f1f1f; --bg:#FFF7F0; --border:#ecdfd1; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;}
+  h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600;margin:0;}
+  a{color:var(--ink);text-decoration:underline;text-underline-offset:3px;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* Layout */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+  .sidebar{background:#fff;border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;}
+  .sidebar h2{font-size:22px;margin-bottom:6px;}
+  .sidebar .sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.55;margin-bottom:24px;}
+  .nav button{display:block;width:100%;text-align:left;background:none;border:none;padding:11px 14px;border-radius:10px;font-size:14px;color:var(--ink);margin-bottom:4px;}
+  .nav button:hover{background:#fff5ea;}
+  .nav button.active{background:var(--peach);font-weight:600;}
+  .sidebar .footer{margin-top:auto;font-size:12px;opacity:.6;padding-top:16px;border-top:1px solid var(--border);}
+  .sidebar .footer button{background:none;border:none;color:var(--ink);font-size:12px;text-decoration:underline;padding:6px 0;}
+
+  .main{padding:32px 40px 60px;max-width:980px;}
+  .main h1{font-size:38px;margin-bottom:6px;}
+  .main .desc{opacity:.6;font-size:13px;margin-bottom:30px;}
+
+  /* Save bar */
+  .savebar{position:sticky;top:0;background:var(--bg);padding:14px 0 18px;display:flex;justify-content:space-between;align-items:center;z-index:5;border-bottom:1px solid var(--border);margin-bottom:24px;}
+  .savebar .status{font-size:13px;opacity:.7;}
+  .savebar .status.dirty{color:#b8770f;font-weight:600;opacity:1;}
+  .savebar .status.saved{color:#3b7a3b;}
+  .savebar .status.error{color:#b53030;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:#fff;border:none;padding:10px 22px;border-radius:80px;font-size:14px;font-weight:500;}
+  .btn:hover{background:#000;}
+  .btn:disabled{background:#bbb;cursor:not-allowed;}
+  .btn-peach{background:var(--peach);color:var(--ink);}
+  .btn-peach:hover{background:var(--peach-deep);}
+  .btn-outline{background:#fff;color:var(--ink);border:1px solid var(--border);}
+  .btn-outline:hover{background:#fff5ea;}
+  .btn-danger{background:#fff;color:#b53030;border:1px solid #f3d2d2;}
+  .btn-danger:hover{background:#fdf0f0;}
+
+  /* Forms */
+  .field{margin-bottom:16px;display:block;}
+  .field label{display:block;font-size:12px;letter-spacing:.13em;text-transform:uppercase;margin-bottom:6px;opacity:.7;font-weight:600;}
+  .field input, .field textarea, .field select{width:100%;font:inherit;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff;}
+  .field input:focus, .field textarea:focus{outline:none;border-color:var(--peach-deep);box-shadow:0 0 0 3px rgba(255,167,105,.18);}
+  .field textarea{min-height:90px;resize:vertical;}
+  .field .hint{font-size:12px;opacity:.55;margin-top:4px;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  @media (max-width:700px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  /* Cards */
+  .card{background:#fff;border-radius:18px;padding:22px;margin-bottom:14px;border:1px solid var(--border);}
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;cursor:pointer;}
+  .card-head h3{font-size:20px;flex:1;}
+  .card-head .meta{font-size:12px;opacity:.6;margin-right:14px;}
+  .card-head .toggle{font-size:18px;opacity:.5;width:24px;text-align:center;}
+  .card-body{border-top:1px solid var(--border);padding-top:18px;}
+  .card-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+
+  /* Image picker */
+  .imgpicker{display:flex;gap:14px;align-items:flex-start;}
+  .imgpicker .preview{width:140px;height:140px;border-radius:12px;background:#fff5ea center/cover no-repeat;border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:11px;text-align:center;}
+  .imgpicker .actions{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .imgpicker input[type=file]{display:none;}
+  .imgpicker label.file{display:inline-flex;justify-content:center;align-items:center;padding:8px 16px;border:1px dashed var(--border);border-radius:10px;cursor:pointer;font-size:13px;background:#fff;}
+  .imgpicker label.file:hover{background:#fff5ea;}
+  .imgpicker .url{font-size:12px;font-family:ui-monospace,monospace;background:#faf5ef;padding:6px 8px;border-radius:6px;word-break:break-all;}
+
+  /* Gallery grid */
+  .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media (max-width:900px){.gallery-grid{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:600px){.gallery-grid{grid-template-columns:repeat(2,1fr);}}
+  .gallery-tile{aspect-ratio:1;background:#fff5ea center/cover no-repeat;border-radius:12px;border:1px solid var(--border);position:relative;overflow:hidden;}
+  .gallery-tile .x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;border:none;font-size:16px;line-height:1;}
+  .gallery-tile .add{display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;color:#bbb;cursor:pointer;}
+
+  /* Setup screen */
+  .setup{max-width:560px;margin:80px auto;padding:40px;background:#fff;border-radius:20px;border:1px solid var(--border);}
+  .setup h1{font-family:'Cormorant Garamond',serif;font-size:42px;margin-bottom:10px;}
+  .setup p{font-size:14px;line-height:1.6;margin-bottom:14px;}
+  .setup ol{padding-left:18px;line-height:1.8;font-size:14px;margin-bottom:18px;}
+  .setup code{background:#faf5ef;padding:2px 6px;border-radius:4px;font-size:13px;}
+  .setup .alert{background:#fef6e7;padding:14px 16px;border-radius:10px;font-size:13px;line-height:1.5;margin-bottom:16px;border:1px solid #f5dca1;}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:14px 20px;border-radius:12px;font-size:13px;box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:50;}
+  .toast.error{background:#b53030;}
+  .toast.success{background:#3b7a3b;}
+
+  .empty{padding:40px;text-align:center;color:#999;background:#fff;border-radius:18px;border:1px dashed var(--border);}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- LOGIN -->
+<div v-if="!authed && !checkingAuth" class="setup" style="max-width:420px;">
+  <h1>Shuhai Admin</h1>
+  <p style="margin-top:8px;margin-bottom:28px;opacity:.6;font-size:13px;">Sign in to manage your site.</p>
+  <form @submit.prevent="login">
+    <div class="field">
+      <label>Password</label>
+      <input v-model="passwordInput" type="password" autocomplete="current-password" autofocus>
+    </div>
+    <button class="btn" type="submit" :disabled="!passwordInput || loggingIn" style="width:100%;">
+      <span v-if="loggingIn" class="spinner"></span>
+      <span v-else>Sign in</span>
+    </button>
+  </form>
+  <div v-if="loginError" style="color:#b53030;margin-top:14px;font-size:13px;">{{ loginError }}</div>
+</div>
+
+<!-- MAIN APP -->
+<div v-else-if="authed && loaded" class="app">
+  <aside class="sidebar">
+    <h2>Shuhai</h2>
+    <div class="sub">Admin</div>
+    <nav class="nav">
+      <button :class="{active:tab==='events'}" @click="tab='events'">Upcoming events</button>
+      <button :class="{active:tab==='regular'}" @click="tab='regular'">Regular classes</button>
+      <button :class="{active:tab==='gallery'}" @click="tab='gallery'">Gallery</button>
+      <button :class="{active:tab==='text'}" @click="tab='text'">Site text</button>
+    </nav>
+    <div class="footer">
+      <button @click="reload">Reload from GitHub</button>
+      <button @click="logout">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="savebar">
+      <div>
+        <h1 style="font-size:30px;">{{ tabTitle }}</h1>
+        <div class="status" :class="statusClass">{{ statusText }}</div>
+      </div>
+      <button class="btn btn-peach" @click="save" :disabled="!dirty || saving">
+        <span v-if="saving" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
+        <span v-else>Save & publish</span>
+      </button>
+    </div>
+
+    <!-- EVENTS / REGULAR shared component -->
+    <template v-if="tab==='events' || tab==='regular'">
+      <div v-if="currentList.length===0" class="empty">
+        Nothing here yet. Click <strong>Add</strong> below to create one.
+      </div>
+      <div v-for="(ev, idx) in currentList" :key="ev.id" class="card">
+        <div class="card-head" @click="toggleOpen(ev.id)">
+          <h3>{{ ev.eventName || '(untitled)' }}</h3>
+          <div class="meta">{{ ev.date && ev.date !== '%' ? ev.date : (ev.day || '') }} · ${{ ev.price }}</div>
+          <div class="toggle">{{ openMap[ev.id] ? '▾' : '▸' }}</div>
+        </div>
+        <div v-show="openMap[ev.id]" class="card-body">
+          <div class="field">
+            <label>Title</label>
+            <input v-model="ev.eventName" @input="markDirty">
+          </div>
+          <div class="grid-3">
+            <div class="field" v-if="tab==='events'">
+              <label>Date (YYYY-MM-DD)</label>
+              <input v-model="ev.date" @input="markDirty" placeholder="2026-06-01">
+              <div class="hint">Use % for recurring</div>
+            </div>
+            <div class="field" v-if="tab==='regular'">
+              <label>Date</label>
+              <input v-model="ev.date" @input="markDirty" placeholder="% (recurring)">
+            </div>
+            <div class="field">
+              <label>Day (optional)</label>
+              <input v-model="ev.day" @input="markDirty" placeholder="Monday, Saturday...">
+            </div>
+            <div class="field">
+              <label>Time</label>
+              <input v-model="ev.time" @input="markDirty" placeholder="6:00 pm - 9:00 pm">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Price (CAD, before GST)</label>
+              <input type="number" step="0.01" v-model.number="ev.price" @input="markDirty">
+            </div>
+            <div class="field">
+              <label>Start prefix (optional)</label>
+              <input v-model="ev.startDate" @input="markDirty" placeholder="e.g. 'June 1 -' for multi-week">
+            </div>
+          </div>
+          <div class="field">
+            <label>Location</label>
+            <input v-model="ev.location" @input="markDirty">
+          </div>
+          <div class="field">
+            <label>Short description (shown on card)</label>
+            <input v-model="ev.description" @input="markDirty">
+          </div>
+          <div class="field">
+            <label>Full description (shown in popup)</label>
+            <textarea v-model="ev.modalDescription" @input="markDirty"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>What's included (popup, optional)</label>
+              <input v-model="ev.modalIncludes" @input="markDirty" placeholder="e.g. lunch, materials...">
+            </div>
+            <div class="field">
+              <label>Discount note (popup, optional)</label>
+              <input v-model="ev.modalDiscount" @input="markDirty" placeholder="e.g. for four classes">
+            </div>
+          </div>
+          <div class="field">
+            <label>Card image</label>
+            <div class="imgpicker">
+              <div class="preview" :style="ev.img ? `background-image:url('${imgUrl(ev.img)}')` : ''">
+                <span v-if="!ev.img">no image</span>
+              </div>
+              <div class="actions">
+                <label class="file">
+                  <input type="file" accept="image/*" @change="handleUpload($event, ev, 'img')">
+                  Upload new image
+                </label>
+                <input v-model="ev.img" @input="markDirty" placeholder="filename.png or full URL">
+                <div class="url" v-if="ev.img">{{ imgUrl(ev.img) }}</div>
+                <div class="hint">Use a filename if the image lives in <code>public/assets/img/</code>, or a full URL.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button class="btn-outline btn" @click="moveUp(idx)" :disabled="idx===0">↑ Move up</button>
+            <button class="btn-outline btn" @click="moveDown(idx)" :disabled="idx===currentList.length-1">↓ Move down</button>
+            <button class="btn-danger btn" @click="removeItem(idx)">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:24px;">
+        <button class="btn" @click="addItem">+ Add new {{ tab==='events' ? 'event' : 'class' }}</button>
+      </div>
+    </template>
+
+    <!-- GALLERY -->
+    <template v-if="tab==='gallery'">
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">Student artwork</h3>
+        <div class="gallery-grid">
+          <div v-for="(img, i) in content.gallery.student" :key="'s'+i"
+               class="gallery-tile" :style="`background-image:url('${imgUrl(img)}')`">
+            <button class="x" @click="removeGalleryImg('student', i)" title="Delete">×</button>
+          </div>
+          <label class="gallery-tile" style="cursor:pointer;">
+            <input type="file" accept="image/*" style="display:none;" @change="handleGalleryUpload($event, 'student')">
+            <div class="add">+</div>
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">My artwork</h3>
+        <div class="gallery-grid">
+          <div v-for="(img, i) in content.gallery.my" :key="'m'+i"
+               class="gallery-tile" :style="`background-image:url('${imgUrl(img)}')`">
+            <button class="x" @click="removeGalleryImg('my', i)" title="Delete">×</button>
+          </div>
+          <label class="gallery-tile" style="cursor:pointer;">
+            <input type="file" accept="image/*" style="display:none;" @change="handleGalleryUpload($event, 'my')">
+            <div class="add">+</div>
+          </label>
+        </div>
+      </div>
+    </template>
+
+    <!-- SITE TEXT -->
+    <template v-if="tab==='text'">
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">Banner</h3>
+        <div class="field">
+          <label>Quote (top banner)</label>
+          <textarea v-model="content.siteText.bannerQuote" @input="markDirty"></textarea>
+        </div>
+        <div class="field">
+          <label>Quote author</label>
+          <input v-model="content.siteText.bannerAuthor" @input="markDirty">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">"Why" section</h3>
+        <div class="field">
+          <label>Section title</label>
+          <input v-model="content.siteText.whyTitle" @input="markDirty">
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="field"><label>Left card title</label><input v-model="content.siteText.whyLeftTitle" @input="markDirty"></div>
+            <div class="field">
+              <label>Left card items (one per line)</label>
+              <textarea v-model="whyLeftItemsText" @input="markDirty"></textarea>
+            </div>
+          </div>
+          <div>
+            <div class="field"><label>Right card title</label><input v-model="content.siteText.whyRightTitle" @input="markDirty"></div>
+            <div class="field">
+              <label>Right card items (one per line)</label>
+              <textarea v-model="whyRightItemsText" @input="markDirty"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">About me</h3>
+        <div class="field"><label>Section title</label><input v-model="content.siteText.aboutTitle" @input="markDirty"></div>
+        <div class="field">
+          <label>Paragraphs (separate with a blank line)</label>
+          <textarea v-model="aboutParagraphsText" @input="markDirty" style="min-height:200px;"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">Subscribe banner</h3>
+        <div class="field">
+          <label>Quote</label>
+          <input v-model="content.siteText.subscribeQuote" @input="markDirty">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">Frequently asked questions</h3>
+        <div v-for="(item, i) in content.siteText.faq" :key="'faq'+i" style="border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:14px;">
+          <div class="field"><label>Q{{ i+1 }} — Question</label><input v-model="item.question" @input="markDirty"></div>
+          <div class="field"><label>Q{{ i+1 }} — Answer</label><textarea v-model="item.answer" @input="markDirty"></textarea></div>
+          <button class="btn-danger btn" @click="removeFaq(i)" style="font-size:12px;padding:6px 14px;">Delete this question</button>
+        </div>
+        <button class="btn" @click="addFaq">+ Add question</button>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:22px;margin-bottom:14px;">Footer / Contacts</h3>
+        <div class="grid-2">
+          <div class="field"><label>Email</label><input v-model="content.siteText.footerEmail" @input="markDirty"></div>
+          <div class="field"><label>Address</label><input v-model="content.siteText.footerAddress" @input="markDirty"></div>
+        </div>
+      </div>
+    </template>
+
+  </main>
+</div>
+
+<div v-else class="setup" style="text-align:center;max-width:420px;">
+  <h1>Shuhai Admin</h1>
+  <p style="margin-top:18px;"><span class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span> Loading…</p>
+  <p v-if="loadError" style="color:#b53030;margin-top:10px;font-size:13px;">{{ loadError }}</p>
+</div>
+
+<div v-if="toast" class="toast" :class="toast.type">{{ toast.msg }}</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "vue": "https://unpkg.com/vue@3.4.21/dist/vue.esm-browser.js"
+  }
+}
+</script>
+
+<script type="module">
+import { createApp, ref, reactive, computed, watch, onMounted } from 'vue';
+
+const api = async (method, path, opts = {}) => {
+  const init = { method, credentials: 'same-origin' };
+  if (opts.json !== undefined) {
+    init.headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    init.body = JSON.stringify(opts.json);
+  } else if (opts.form) {
+    init.body = opts.form;
+  } else {
+    init.headers = { 'Accept': 'application/json' };
+  }
+  const r = await fetch(path, init);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Request ${r.status}`);
+  return data;
+};
+
+createApp({
+  setup() {
+    const passwordInput = ref('');
+    const authed = ref(false);
+    const checkingAuth = ref(true);
+    const loggingIn = ref(false);
+    const loginError = ref('');
+
+    const loaded = ref(false);
+    const loadError = ref('');
+    const content = ref(null);
+    const sha = ref(null);
+    const dirty = ref(false);
+    const saving = ref(false);
+    const status = ref({ type: 'idle', msg: '' });
+    const toast = ref(null);
+    const tab = ref('events');
+    const openMap = reactive({});
+
+    const showToast = (msg, type = 'info', ms = 3000) => {
+      toast.value = { msg, type };
+      setTimeout(() => { toast.value = null; }, ms);
+    };
+
+    const tabTitle = computed(() => ({
+      events: 'Upcoming events',
+      regular: 'Regular classes',
+      gallery: 'Gallery',
+      text: 'Site text',
+    }[tab.value]));
+
+    const currentList = computed(() =>
+      tab.value === 'events' ? content.value?.events ?? [] :
+      tab.value === 'regular' ? content.value?.regularClasses ?? [] : []
+    );
+
+    const statusText = computed(() => {
+      if (saving.value) return 'Saving…';
+      if (status.value.type === 'error') return status.value.msg;
+      if (status.value.type === 'saved') return 'Saved and published. Your changes will appear on the site in 3–4 minutes.';
+      if (dirty.value) return 'Unsaved changes';
+      return 'All changes saved';
+    });
+    const statusClass = computed(() => {
+      if (status.value.type === 'error') return 'error';
+      if (status.value.type === 'saved') return 'saved';
+      if (dirty.value) return 'dirty';
+      return '';
+    });
+
+    const markDirty = () => { dirty.value = true; status.value = { type: 'idle' }; };
+
+    // Derived text fields
+    const whyLeftItemsText = computed({
+      get: () => content.value?.siteText.whyLeftItems.join('\n') || '',
+      set: v => { content.value.siteText.whyLeftItems = v.split('\n').filter(x => x.trim()); markDirty(); }
+    });
+    const whyRightItemsText = computed({
+      get: () => content.value?.siteText.whyRightItems.join('\n') || '',
+      set: v => { content.value.siteText.whyRightItems = v.split('\n').filter(x => x.trim()); markDirty(); }
+    });
+    const aboutParagraphsText = computed({
+      get: () => content.value?.siteText.aboutParagraphs.join('\n\n') || '',
+      set: v => { content.value.siteText.aboutParagraphs = v.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean); markDirty(); }
+    });
+
+    // ---- auth ----
+    async function checkAuth() {
+      try {
+        const r = await api('GET', '/admin/status');
+        authed.value = !!r.authed;
+        if (authed.value) await loadContent();
+      } catch {}
+      checkingAuth.value = false;
+    }
+
+    async function login() {
+      loggingIn.value = true;
+      loginError.value = '';
+      try {
+        await api('POST', '/admin/login', { json: { password: passwordInput.value } });
+        authed.value = true;
+        passwordInput.value = '';
+        await loadContent();
+      } catch (e) {
+        loginError.value = e.message;
+      } finally {
+        loggingIn.value = false;
+      }
+    }
+
+    async function logout() {
+      if (dirty.value && !confirm('You have unsaved changes. Sign out anyway?')) return;
+      try { await api('POST', '/admin/logout'); } catch {}
+      authed.value = false;
+      content.value = null;
+      loaded.value = false;
+      sha.value = null;
+      dirty.value = false;
+    }
+
+    // ---- load / save ----
+    async function loadContent() {
+      loaded.value = false;
+      loadError.value = '';
+      try {
+        const r = await api('GET', '/admin/load');
+        content.value = r.content;
+        sha.value = r.sha;
+        loaded.value = true;
+      } catch (e) {
+        loadError.value = e.message;
+      }
+    }
+
+    async function reload() {
+      if (dirty.value && !confirm('Discard unsaved changes and reload?')) return;
+      await loadContent();
+      dirty.value = false;
+      status.value = { type: 'idle' };
+    }
+
+    async function save() {
+      if (!dirty.value || saving.value) return;
+      saving.value = true;
+      try {
+        const r = await api('POST', '/admin/save', { json: { content: content.value, sha: sha.value } });
+        sha.value = r.sha;
+        dirty.value = false;
+        status.value = { type: 'saved' };
+        showToast('Saved! Live in ~3 minutes.', 'success');
+      } catch (e) {
+        status.value = { type: 'error', msg: e.message };
+        showToast(`Save failed: ${e.message}`, 'error', 6000);
+      } finally {
+        saving.value = false;
+      }
+    }
+
+    // ---- image upload ----
+    async function uploadImage(file) {
+      const form = new FormData();
+      form.append('image', file);
+      const r = await api('POST', '/admin/upload', { form });
+      return r.url.replace(/^\//, ''); // store without leading slash
+    }
+
+    async function handleUpload(event, target, key) {
+      const file = event.target.files[0];
+      if (!file) return;
+      showToast('Uploading image…', 'info', 10000);
+      try {
+        const url = await uploadImage(file);
+        target[key] = url;
+        markDirty();
+        showToast('Image uploaded. Click Save to publish.', 'success');
+      } catch (e) {
+        showToast(`Upload failed: ${e.message}`, 'error', 6000);
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    async function handleGalleryUpload(event, which) {
+      const file = event.target.files[0];
+      if (!file) return;
+      showToast('Uploading image…', 'info', 10000);
+      try {
+        const url = await uploadImage(file);
+        content.value.gallery[which].push(url);
+        markDirty();
+        showToast('Image added. Click Save to publish.', 'success');
+      } catch (e) {
+        showToast(`Upload failed: ${e.message}`, 'error', 6000);
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    function removeGalleryImg(which, i) {
+      if (!confirm('Remove this image from the gallery? (The file itself stays in the repo.)')) return;
+      content.value.gallery[which].splice(i, 1);
+      markDirty();
+    }
+
+    // ---- list ops ----
+    function addItem() {
+      const list = tab.value === 'events' ? content.value.events : content.value.regularClasses;
+      const ids = list.map(x => x.id);
+      const next = (ids.length ? Math.max(...ids) : 0) + 1;
+      const tmpl = tab.value === 'events'
+        ? { id: next, eventName: 'NEW EVENT', startDate: null, date: '2026-01-01', time: '6:00 pm - 9:00 pm', day: null, price: 0, location: '1324 11 Ave SW, #202, Calgary', description: 'Beginner-friendly. All supplies provided', img: '', modalDescription: '', modalIncludes: null, modalDiscount: null }
+        : { id: next, eventName: 'NEW CLASS', time: '6:00 pm - 9:00 pm', date: '%', day: 'Saturday', price: 0, location: '1324 11 Ave SW, #202, Calgary', description: 'All supplies provided', img: '', modalDescription: '', modalIncludes: null, modalDiscount: null };
+      list.push(tmpl);
+      openMap[next] = true;
+      markDirty();
+    }
+    function removeItem(idx) {
+      const list = tab.value === 'events' ? content.value.events : content.value.regularClasses;
+      if (!confirm(`Delete "${list[idx].eventName}"?`)) return;
+      list.splice(idx, 1);
+      markDirty();
+    }
+    function moveUp(idx) {
+      if (idx === 0) return;
+      const list = tab.value === 'events' ? content.value.events : content.value.regularClasses;
+      [list[idx - 1], list[idx]] = [list[idx], list[idx - 1]];
+      markDirty();
+    }
+    function moveDown(idx) {
+      const list = tab.value === 'events' ? content.value.events : content.value.regularClasses;
+      if (idx === list.length - 1) return;
+      [list[idx + 1], list[idx]] = [list[idx], list[idx + 1]];
+      markDirty();
+    }
+    function toggleOpen(id) { openMap[id] = !openMap[id]; }
+    function addFaq() { content.value.siteText.faq.push({ question: '', answer: '' }); markDirty(); }
+    function removeFaq(i) { content.value.siteText.faq.splice(i, 1); markDirty(); }
+
+    function imgUrl(img) {
+      if (!img) return '';
+      if (/^https?:\/\//.test(img)) return img;
+      if (img.startsWith('assets/')) return `/${img}`;
+      return `/assets/img/${img}`;
+    }
+
+    // warn on unload if dirty
+    window.addEventListener('beforeunload', (e) => {
+      if (dirty.value) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    onMounted(checkAuth);
+
+    return {
+      passwordInput, authed, checkingAuth, loggingIn, loginError, login, logout,
+      loaded, loadError, content, dirty, saving, save, reload,
+      tab, tabTitle, openMap, toggleOpen,
+      currentList, addItem, removeItem, moveUp, moveDown,
+      markDirty, statusText, statusClass,
+      handleUpload, handleGalleryUpload, removeGalleryImg, imgUrl,
+      whyLeftItemsText, whyRightItemsText, aboutParagraphsText,
+      addFaq, removeFaq,
+      toast,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
