@@ -20,3 +20,13 @@ Route::get('/', function () {
 Route::get('/thank-you', function () {
     return view('thank-you-page');
 });
+
+// CMS admin (session-auth, server holds GitHub token)
+Route::prefix('admin')->group(function () {
+    Route::post('/login',  [\App\Http\Controllers\AdminCmsController::class, 'login']);
+    Route::post('/logout', [\App\Http\Controllers\AdminCmsController::class, 'logout']);
+    Route::get('/status',  [\App\Http\Controllers\AdminCmsController::class, 'status']);
+    Route::get('/load',    [\App\Http\Controllers\AdminCmsController::class, 'load']);
+    Route::post('/save',   [\App\Http\Controllers\AdminCmsController::class, 'save']);
+    Route::post('/upload', [\App\Http\Controllers\AdminCmsController::class, 'upload']);
+});

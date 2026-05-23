@@ -15,11 +15,11 @@
                 </div>
                 <div class="footer-contact">
                     <img src="assets/img/icon-email.svg" alt="icon-email">
-                    a.art.shuhai@gmail.com
+                    {{ email }}
                 </div>
                 <div class="footer-contact mb-0">
                     <img src="assets/img/icon-location-black.svg" alt="icon-location-footer">
-                    1324 11 Ave, SW, #202, Calgary
+                    {{ address }}
                 </div>
                 <div class="footer-description">
                     Follow us on social media
@@ -41,6 +41,21 @@
 <script>
 export default {
     name: 'FooterComponent',
+    data() {
+        return {
+            email: "a.art.shuhai@gmail.com",
+            address: "1324 11 Ave, SW, #202, Calgary",
+        };
+    },
+    mounted() {
+        fetch(`/content.json?ts=${Math.floor(Date.now() / 60000)}`)
+            .then(r => (r.ok ? r.json() : null))
+            .then(cms => {
+                if (cms?.siteText?.footerEmail) this.email = cms.siteText.footerEmail;
+                if (cms?.siteText?.footerAddress) this.address = cms.siteText.footerAddress;
+            })
+            .catch(() => {});
+    },
 };
 </script>
 

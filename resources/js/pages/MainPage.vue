@@ -3,11 +3,9 @@
         <div class="banner mb-200">
             <HeaderComponent></HeaderComponent>
             <div class="container d-flex align-items-center flex-column">
-                <div class="banner-title">
-                    “Art washes away from the<br> soul the dust <br> of everyday life”
-                </div>
+                <div class="banner-title" style="white-space:pre-line">{{ siteText.bannerQuote }}</div>
                 <div class="banner-description">
-                    Pablo Picasso
+                    {{ siteText.bannerAuthor }}
                 </div>
                 <a href="#events" class="main-button">
                     View events
@@ -16,59 +14,24 @@
         </div>
         <div class="container">
             <div class="why mb-200 d-flex align-items-center flex-column">
-                <div class="main-title">
-                    Let’s get creative!<br>
-                    Art classes for all
-                </div>
+                <div class="main-title" style="white-space:pre-line">{{ siteText.whyTitle }}</div>
                 <div class="d-flex flex-column flex-lg-row">
                     <div class="why-block">
-                        <div class="why-block-title">
-                            Visual arts & creative classes
-                        </div>
-                        <div class="why-block-description">
+                        <div class="why-block-title">{{ siteText.whyLeftTitle }}</div>
+                        <div v-for="(item, i) in siteText.whyLeftItems" :key="'wl'+i"
+                             class="why-block-description"
+                             :class="{ 'mb-0': i === siteText.whyLeftItems.length - 1 }">
                             <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            individual lessons
-                        </div>
-                        <div class="why-block-description">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            group workshops for children and adults
-                        </div>
-                        <div class="why-block-description">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            corporate events
-                        </div>
-                        <div class="why-block-description mb-0">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            courses in the visual arts for all levels of training and much more
+                            {{ item }}
                         </div>
                     </div>
                     <div class="why-block me-0">
-                        <div class="why-block-title">
-                            Why me?
-                        </div>
-                        <div class="why-block-description">
+                        <div class="why-block-title">{{ siteText.whyRightTitle }}</div>
+                        <div v-for="(item, i) in siteText.whyRightItems" :key="'wr'+i"
+                             class="why-block-description"
+                             :class="{ 'mb-0': i === siteText.whyRightItems.length - 1 }">
                             <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            professional experience teaching fine arts for over 12 years
-                        </div>
-                        <div class="why-block-description">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            friendly and inspiring atmosphere at the classes
-                        </div>
-                        <div class="why-block-description">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            provision of high quality materials
-                        </div>
-                        <div class="why-block-description">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            individual approach to each student
-                        </div>
-                        <div class="why-block-description">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            flexible schedule
-                        </div>
-                        <div class="why-block-description mb-0">
-                            <img src="assets/img/icon-checkmark.png" alt="checkmark">
-                            convenient location
+                            {{ item }}
                         </div>
                     </div>
                 </div>
@@ -202,29 +165,9 @@
             <div class="about mb-200">
                 <div class="row align-items-center">
                     <div class="col-12 col-lg-6 mb-4 mb-lg-0 text-center text-lg-start">
-                        <div class="main-title text-center text-lg-start">About me</div>
-                        <div class="about-description">
-                            Good to see you here! My name is Alevtyna, I am a professional fine arts teacher
-                            based in Calgary. I am continuously inspired by world we live in and can never resist
-                            putting this beauty
-                            on a canvas.
-                        </div>
-                        <div class="about-description">
-                            My preferred art style is realism and I have academic knowledge and practical experience of
-                            applying it in
-                            painting, drawing, and compositions. Along with my students I work on creating portraits,
-                            landscapes,
-                            architecture stills, and a lot more.
-                        </div>
-                        <div class="about-description">
-                            However, I’m always open to exploring new styles, approaches, and techniques. I believe that
-                            there are
-                            limitless possibilities when it comes to art and I want to inspire my students to experiment
-                            and express
-                            themselves.
-                        </div>
-                        <div class="about-description">
-                            Let’s get creative!
+                        <div class="main-title text-center text-lg-start">{{ siteText.aboutTitle }}</div>
+                        <div v-for="(p, i) in siteText.aboutParagraphs" :key="'ap'+i" class="about-description">
+                            {{ p }}
                         </div>
                     </div>
                     <div class="col-12 col-lg-6">
@@ -238,7 +181,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12 col-lg-9 d-flex justify-content-center mb-3 mb-lg-0">
-                        <div class="subscribe-title">“Escape the Ordinary – Paint Your Dreams!”</div>
+                        <div class="subscribe-title">{{ siteText.subscribeQuote }}</div>
                     </div>
                     <div class="col-12 col-lg-3 d-flex justify-content-center">
                         <a href="#events" class="main-button">Events</a>
@@ -265,56 +208,21 @@
                     </div>
                     <div class="col-12 col-lg-6">
                         <div class="accordion" id="accordionExample">
-                            <div class="accordion-item">
+                            <div v-for="(item, i) in siteText.faq" :key="'faq'+i"
+                                 class="accordion-item" :class="{ 'mb-0': i === siteText.faq.length - 1 }">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapseOne" aria-expanded="true"
-                                            aria-controls="collapseOne">
-                                        What if I don’t have any experience with painting?
+                                            :class="{ collapsed: i !== 0 }"
+                                            :data-bs-target="'#faqCollapse'+i"
+                                            :aria-expanded="i === 0 ? 'true' : 'false'"
+                                            :aria-controls="'faqCollapse'+i">
+                                        {{ item.question }}
                                     </button>
                                 </h2>
-                                <div id="collapseOne" class="accordion-collapse collapse show"
+                                <div :id="'faqCollapse'+i" class="accordion-collapse collapse"
+                                     :class="{ show: i === 0 }"
                                      data-bs-parent="#accordionExample">
-                                    <div class="accordion-body">
-                                        Don’t worry! I will find an individual approach to each student based on their
-                                        level of experience.»
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapseTwo" aria-expanded="false"
-                                            aria-controls="collapseTwo">
-                                        Do I need to bring my own materials or supplies ?
-                                    </button>
-                                </h2>
-                                <div id="collapseTwo" class="accordion-collapse collapse"
-                                     data-bs-parent="#accordionExample">
-                                    <div class="accordion-body">
-                                        All materials and supplies are included in the cost of the workshop. The high
-                                        quality
-                                        of the materials provided is guaranteed.
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="accordion-item mb-0">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapseThree" aria-expanded="false"
-                                            aria-controls="collapseThree">
-                                        What if I can't complete the work in the allotted time or draw it faster?
-                                    </button>
-                                </h2>
-                                <div id="collapseThree" class="accordion-collapse collapse"
-                                     data-bs-parent="#accordionExample">
-                                    <div class="accordion-body">
-                                        The average length of the class is 3 hours, but of course students can work at
-                                        different paces.
-                                        I will monitor the process so that you have a finished work. The remaining time
-                                        can be spent
-                                        socializing with other students, having drinks and snacks).
-                                    </div>
+                                    <div class="accordion-body">{{ item.answer }}</div>
                                 </div>
                             </div>
                         </div>
@@ -369,7 +277,41 @@ export default {
                     "assets/img/gallery/my_artwork/IMG_5363.webp",
                     "assets/img/gallery/my_artwork/IMG_3931.webp",
                 ]
-            }
+            },
+            siteText: {
+                bannerQuote: "“Art washes away from the\nsoul the dust\nof everyday life”",
+                bannerAuthor: "Pablo Picasso",
+                whyTitle: "Let’s get creative!\nArt classes for all",
+                whyLeftTitle: "Visual arts & creative classes",
+                whyLeftItems: [
+                    "individual lessons",
+                    "group workshops for children and adults",
+                    "corporate events",
+                    "courses in the visual arts for all levels of training and much more",
+                ],
+                whyRightTitle: "Why me?",
+                whyRightItems: [
+                    "professional experience teaching fine arts for over 12 years",
+                    "friendly and inspiring atmosphere at the classes",
+                    "provision of high quality materials",
+                    "individual approach to each student",
+                    "flexible schedule",
+                    "convenient location",
+                ],
+                aboutTitle: "About me",
+                aboutParagraphs: [
+                    "Good to see you here! My name is Alevtyna, I am a professional fine arts teacher based in Calgary. I am continuously inspired by world we live in and can never resist putting this beauty on a canvas.",
+                    "My preferred art style is realism and I have academic knowledge and practical experience of applying it in painting, drawing, and compositions. Along with my students I work on creating portraits, landscapes, architecture stills, and a lot more.",
+                    "However, I’m always open to exploring new styles, approaches, and techniques. I believe that there are limitless possibilities when it comes to art and I want to inspire my students to experiment and express themselves.",
+                    "Let’s get creative!",
+                ],
+                subscribeQuote: "“Escape the Ordinary – Paint Your Dreams!”",
+                faq: [
+                    {question: "What if I don’t have any experience with painting?", answer: "Don’t worry! I will find an individual approach to each student based on their level of experience."},
+                    {question: "Do I need to bring my own materials or supplies ?", answer: "All materials and supplies are included in the cost of the workshop. The high quality of the materials provided is guaranteed."},
+                    {question: "What if I can't complete the work in the allotted time or draw it faster?", answer: "The average length of the class is 3 hours, but of course students can work at different paces. I will monitor the process so that you have a finished work. The remaining time can be spent socializing with other students, having drinks and snacks)."},
+                ],
+            },
         };
     },
     computed: {
@@ -399,18 +341,34 @@ export default {
         }
     },
     mounted() {
-        const eventsContainer = document.getElementById("events");
-        const infinityEventsContainer = document.getElementById("infinityEvents");
-        const options = {
-            slidesPerPage: 2,
-            center: false,
-            Autoplay: {
-                timeout: 3000,
-            },
+        const initCarousels = () => {
+            const eventsContainer = document.getElementById("events");
+            const infinityEventsContainer = document.getElementById("infinityEvents");
+            const options = {
+                slidesPerPage: 2,
+                center: false,
+                Autoplay: { timeout: 3000 },
+            };
+            new Carousel(eventsContainer, options, {Autoplay});
+            new Carousel(infinityEventsContainer, options, {Autoplay});
         };
 
-        new Carousel(eventsContainer, options, {Autoplay});
-        new Carousel(infinityEventsContainer, options, {Autoplay});
+        // Fetch CMS content (managed via /admin). Falls back to hardcoded defaults if unavailable.
+        const url = `/content.json?ts=${Math.floor(Date.now() / 60000)}`; // bust 1-min cache
+        fetch(url)
+            .then(r => (r.ok ? r.json() : null))
+            .then(cms => {
+                if (!cms) return;
+                if (Array.isArray(cms.events)) this.events = cms.events;
+                if (Array.isArray(cms.regularClasses)) this.infinityEvent = cms.regularClasses;
+                if (cms.gallery) {
+                    if (Array.isArray(cms.gallery.student)) this.images.student = cms.gallery.student;
+                    if (Array.isArray(cms.gallery.my)) this.images.my = cms.gallery.my;
+                }
+                if (cms.siteText) Object.assign(this.siteText, cms.siteText);
+            })
+            .catch(() => {})
+            .finally(() => this.$nextTick(initCarousels));
     }
 };
 </script>

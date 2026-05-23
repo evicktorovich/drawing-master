@@ -1,0 +1,71 @@
+{
+  "events": [
+    {"id":1,"eventName":"MIDNIGHT IN PARIS ACRYLIC CLASS","startDate":null,"date":"2026-05-22","time":"6:00 pm - 9:00 pm","day":null,"price":78.75,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"IMG_5667.PNG","modalDescription":"Discover the magic of Paris at night with glowing lights and rich, textured acrylic strokes. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":2,"eventName":"LILAC DREAM ACRYLIC CLASS","startDate":null,"date":"2026-05-27","time":"6:00 pm - 9:00 pm","day":null,"price":78.75,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"IMG_5550.PNG","modalDescription":"Create a dreamy lilac bloom with airy strokes, soft transitions, and vibrant spring light. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":3,"eventName":"SUNLIT SHORE ACRYLIC CLASS","startDate":null,"date":"2026-05-29","time":"6:00 pm - 9:00 pm","day":null,"price":78.75,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"IMG_5603.PNG","modalDescription":"Create a glowing sunset scene with warm colors, light reflections, and easy expressive brushwork. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":4,"eventName":"POPPY MEADOW ACRYLIC CLASS","startDate":null,"date":"2026-06-03","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j4.PNG","modalDescription":"A gentle introduction to painting a natural scene with expressive floral accents. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":5,"eventName":"RED HOT STILL LIFE PEPPERS","startDate":null,"date":"2026-06-05","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j8.PNG","modalDescription":"An exploration of contrast, where vibrant forms emerge from darkness. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":6,"eventName":"WATERCOLOR GARDEN HOLLYHOCK","startDate":null,"date":"2026-06-10","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j6.PNG","modalDescription":"A soft watercolor interpretation of garden flowers, shaped by light washes and quiet transitions. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":7,"eventName":"ALONG THE FENCE ACRYLIC CLASS","startDate":null,"date":"2026-06-12","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j3.PNG","modalDescription":"A vibrant acrylic composition where color and texture guide the eye into depth and distance. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":8,"eventName":"ABSTRACT URBAN SKYLINE CLASS","startDate":null,"date":"2026-06-17","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j2.PNG","modalDescription":"An expressive impasto interpretation of the skyline, where abstract texture meets the rhythm of the city. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":9,"eventName":"WILDFLOWERS ACRYLIC CLASS","startDate":null,"date":"2026-06-19","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j5.PNG","modalDescription":"A soft yet vibrant landscape where color and light settle into evening calm. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":10,"eventName":"AFTERGLOW WATERCOLOR CLASS","startDate":null,"date":"2026-06-24","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j7.PNG","modalDescription":"A quiet moment where the last light lingers over water and fades into evening stillness. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":11,"eventName":"AT THE FOREST EDGE ACRYLIC CLASS","startDate":null,"date":"2026-06-26","time":"6:00 pm - 9:00 pm","day":null,"price":84,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly.  All supplies provided","img":"j1.PNG","modalDescription":"An expressive acrylic composition revealing depth and calm through layered greens and light. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.","modalIncludes":null,"modalDiscount":null},
+    {"id":12,"eventName":"ACRYLIC PAINTING COURSE \"REALISTIC FLOWERS\" (5 sessions)","startDate":"June 1 -","date":"2026-06-01","time":"06:00 pm - 09:00 pm","day":"Mondays, ","price":367.5,"location":"1324 11 Ave SW, #202, Calgary","description":"Beginner-friendly. All supplies provided + light snacks and beverages","img":"Post.jpg","modalDescription":"Learn how to paint expressive, realistic flowers in acrylics through a modern step-by-step approach designed for beginners and intermediate artists alike. Throughout this 5-week course, you’ll explore color mixing, light and shadow, soft petal transitions, texture, and depth while creating beautiful floral paintings on canvas. No previous experience needed — just a love for creativity and flowers.","modalIncludes":null,"modalDiscount":null}
+  ],
+  "regularClasses": [
+    {"id":1,"eventName":"REGULAR ART CLASSES FOR ADULTS (4 classes)","time":"3:00 pm - 6:00 pm","date":"%","day":"Saturday","price":231,"location":"1324 11 Ave SW, #202, Calgary","description":"All supplies provided","img":"photo.webp","modalDescription":"Master visual arts through group lessons designed to your interests and skill level. Explore painting, drawing, and composition at your own pace in a relaxed and supportive environment. ","modalIncludes":null,"modalDiscount":"for four classes"},
+    {"id":2,"eventName":"PRIVATE ART CLASSES","time":"-","date":"%","day":"Monday - Friday","price":75,"location":"1324 11 Ave SW, #202, Calgary","description":"TEMPORARILY UNAVAILABLE","img":"adults.JPG","modalDescription":"Creativity, dreams, inspiration - the world of art awaits you! We practice a variety of techniques, materials and subjects in our classes. ","modalIncludes":null,"modalDiscount":"for 1,5 hour"}
+  ],
+  "gallery": {
+    "student": [
+      "assets/img/gallery/student_artwork/IMG_1819.webp",
+      "assets/img/gallery/student_artwork/IMG_1014.webp",
+      "assets/img/gallery/student_artwork/IMG_0552.webp",
+      "assets/img/gallery/student_artwork/IMG_3963.webp"
+    ],
+    "my": [
+      "assets/img/gallery/my_artwork/IMG_1469.webp",
+      "assets/img/gallery/my_artwork/IMG_7640.webp",
+      "assets/img/gallery/my_artwork/IMG_5363.webp",
+      "assets/img/gallery/my_artwork/IMG_3931.webp"
+    ]
+  },
+  "siteText": {
+    "bannerQuote": "“Art washes away from the\nsoul the dust\nof everyday life”",
+    "bannerAuthor": "Pablo Picasso",
+    "whyTitle": "Let’s get creative!\nArt classes for all",
+    "whyLeftTitle": "Visual arts & creative classes",
+    "whyLeftItems": [
+      "individual lessons",
+      "group workshops for children and adults",
+      "corporate events",
+      "courses in the visual arts for all levels of training and much more"
+    ],
+    "whyRightTitle": "Why me?",
+    "whyRightItems": [
+      "professional experience teaching fine arts for over 12 years",
+      "friendly and inspiring atmosphere at the classes",
+      "provision of high quality materials",
+      "individual approach to each student",
+      "flexible schedule",
+      "convenient location"
+    ],
+    "aboutTitle": "About me",
+    "aboutParagraphs": [
+      "Good to see you here! My name is Alevtyna, I am a professional fine arts teacher based in Calgary. I am continuously inspired by world we live in and can never resist putting this beauty on a canvas.",
+      "My preferred art style is realism and I have academic knowledge and practical experience of applying it in painting, drawing, and compositions. Along with my students I work on creating portraits, landscapes, architecture stills, and a lot more.",
+      "However, I’m always open to exploring new styles, approaches, and techniques. I believe that there are limitless possibilities when it comes to art and I want to inspire my students to experiment and express themselves.",
+      "Let’s get creative!"
+    ],
+    "subscribeQuote": "“Escape the Ordinary – Paint Your Dreams!”",
+    "faq": [
+      {"question":"What if I don’t have any experience with painting?","answer":"Don’t worry! I will find an individual approach to each student based on their level of experience."},
+      {"question":"Do I need to bring my own materials or supplies?","answer":"All materials and supplies are included in the cost of the workshop. The high quality of the materials provided is guaranteed."},
+      {"question":"What if I can’t complete the work in the allotted time or draw it faster?","answer":"The average length of the class is 3 hours, but of course students can work at different paces. I will monitor the process so that you have a finished work. The remaining time can be spent socializing with other students, having drinks and snacks."}
+    ],
+    "footerEmail": "a.art.shuhai@gmail.com",
+    "footerAddress": "1324 11 Ave, SW, #202, Calgary"
+  },
+  "updatedAt": "2026-05-22T23:00:00Z"
+}
