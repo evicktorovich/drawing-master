@@ -716,6 +716,7 @@ export default {
             &-waitlist-button {
                 background: #2d2d2d !important;
                 border-color: #2d2d2d !important;
+                color: #fff !important;
             }
             &-title {
                 font-family: Cormorant Garamond, serif;
