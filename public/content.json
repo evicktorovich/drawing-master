@@ -79,7 +79,7 @@
             "modalDescription": "A soft yet vibrant landscape where color and light settle into evening calm. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 1
+            "maxAttendees": 0
         },
         {
             "id": 10,
@@ -345,5 +345,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-06-03T05:56:43+00:00"
+    "updatedAt": "2026-06-04T05:06:53+00:00"
 }
