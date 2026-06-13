@@ -50,22 +50,6 @@
             "maxAttendees": 9
         },
         {
-            "id": 8,
-            "eventName": "ABSTRACT URBAN SKYLINE CLASS",
-            "startDate": null,
-            "date": "2026-06-17",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "j2.PNG",
-            "modalDescription": "An expressive impasto interpretation of the skyline, where abstract texture meets the rhythm of the city. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": 4
-        },
-        {
             "id": 10,
             "eventName": "AFTERGLOW WATERCOLOR CLASS",
             "startDate": null,
@@ -193,7 +177,7 @@
         },
         {
             "id": 15,
-            "eventName": "BENEATH THE PRERIE SKIES WATERCOLOR CLASS",
+            "eventName": "BENEATH THE PRAIRIE SKIES WATERCOLOR CLASS",
             "startDate": null,
             "date": "2026-07-24",
             "time": "6:00 pm - 9:00 pm",
@@ -329,5 +313,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-06-04T05:16:24+00:00"
+    "updatedAt": "2026-06-13T03:30:06+00:00"
 }
