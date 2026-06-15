@@ -1,39 +1,6 @@
 {
     "events": [
         {
-            "id": 4,
-            "eventName": "POPPY MEADOW ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-06-03",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "j4.PNG",
-            "modalDescription": "A gentle introduction to painting a natural scene with expressive floral accents. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "bookedOffline": 8,
-            "maxAttendees": 6
-        },
-        {
-            "id": 5,
-            "eventName": "RED HOT STILL LIFE PEPPERS",
-            "startDate": null,
-            "date": "2026-06-05",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "j8.PNG",
-            "modalDescription": "An exploration of contrast, where vibrant forms emerge from darkness. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": 11
-        },
-        {
             "id": 7,
             "eventName": "ALONG THE FENCE ACRYLIC CLASS",
             "startDate": null,
@@ -135,7 +102,7 @@
             "date": "2026-07-15",
             "time": "6:00 pm - 9:00 pm",
             "day": null,
-            "price": 83.99,
+            "price": 84,
             "location": "1324 11 Ave SW, #202, Calgary",
             "description": "Beginner-friendly.  All supplies provided",
             "img": "assets/img/uploaded/1780460409-img-8503.png",
@@ -313,5 +280,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-06-13T03:30:06+00:00"
+    "updatedAt": "2026-06-15T04:08:08+00:00"
 }
