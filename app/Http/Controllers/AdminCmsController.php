@@ -204,6 +204,118 @@ class AdminCmsController extends Controller
         ]);
     }
 
+    /**
+     * Lightweight client list + analytics (read-only), built from Stripe.
+     *
+     * Stripe holds the full purchase history (the leads table only keeps recent rows),
+     * so the customer base is aggregated from all paid Checkout sessions (minus refunds
+     * and $0 tests), keyed by email.
+     */
+    public function clients(Request $request)
+    {
+        if (!$request->session()->get('cms_admin')) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+
+        try {
+            $sk = config('services.stripe.secret');
+            if (!$sk) {
+                throw new \RuntimeException('STRIPE_SECRET not configured');
+            }
+            \Stripe\Stripe::setApiKey($sk);
+
+            $refunded = [];
+            foreach (\Stripe\Refund::all(['limit' => 100])->autoPagingIterator() as $r) {
+                if (!empty($r->payment_intent)) {
+                    $refunded[$r->payment_intent] = true;
+                }
+            }
+
+            $byEmail = [];
+            $classCounts = [];
+            $thisMonth = now()->format('Y-m');
+
+            foreach (\Stripe\Checkout\Session::all(['limit' => 100])->autoPagingIterator() as $s) {
+                if (($s->payment_status ?? '') !== 'paid') {
+                    continue;
+                }
+                if ((int) ($s->amount_total ?? 0) <= 0) {
+                    continue;
+                }
+                if (!empty($s->payment_intent) && isset($refunded[$s->payment_intent])) {
+                    continue;
+                }
+                $email = strtolower(trim((string) ($s->customer_email ?? ($s->customer_details->email ?? ''))));
+                if ($email === '') {
+                    continue;
+                }
+                $name  = trim((string) ($s->customer_details->name ?? ($s->metadata->name ?? '')));
+                $phone = (string) ($s->metadata->phone ?? '');
+                $amt   = (float) (($s->amount_total ?? 0) / 100);
+                $date  = date('Y-m-d', (int) $s->created);
+                $cls   = (string) ($s->metadata->eventName ?? '');
+
+                if (!isset($byEmail[$email])) {
+                    $byEmail[$email] = [
+                        'email'   => (string) ($s->customer_email ?: $email),
+                        'name'    => $name,
+                        'phone'   => $phone,
+                        'orders'  => 0,
+                        'spent'   => 0.0,
+                        'first'   => $date,
+                        'last'    => $date,
+                        'classes' => [],
+                    ];
+                }
+                $c = &$byEmail[$email];
+                $c['orders']++;
+                $c['spent'] += $amt;
+                if ($date < $c['first']) $c['first'] = $date;
+                if ($date > $c['last'])  $c['last']  = $date;
+                if ($name !== '')  $c['name']  = $name;
+                if ($phone !== '') $c['phone'] = $phone;
+                if ($cls !== '')   $c['classes'][] = $cls;
+                unset($c);
+
+                if ($cls !== '') {
+                    $classCounts[$cls] = ($classCounts[$cls] ?? 0) + 1;
+                }
+            }
+
+            $clients = [];
+            foreach ($byEmail as $c) {
+                $c['classes']       = array_values(array_unique($c['classes']));
+                $c['classes_count'] = count($c['classes']);
+                $c['spent']         = round($c['spent'], 2);
+                $clients[] = $c;
+            }
+            usort($clients, fn ($a, $b) => $b['spent'] <=> $a['spent']);
+
+            arsort($classCounts);
+            $topClasses = [];
+            foreach (array_slice($classCounts, 0, 8, true) as $n => $cnt) {
+                $topClasses[] = ['name' => $n, 'count' => $cnt];
+            }
+
+            return response()->json([
+                'generated_at' => now()->toIso8601String(),
+                'source'       => 'stripe',
+                'summary' => [
+                    'total_clients'  => count($clients),
+                    'repeat_clients' => count(array_filter($clients, fn ($c) => $c['orders'] > 1)),
+                    'total_revenue'  => round(array_sum(array_map(fn ($c) => $c['spent'], $clients)), 2),
+                    'total_orders'   => array_sum(array_map(fn ($c) => $c['orders'], $clients)),
+                    'new_this_month' => count(array_filter($clients, fn ($c) => substr((string) $c['first'], 0, 7) === $thisMonth)),
+                ],
+                'top_classes' => $topClasses,
+                'clients'     => $clients,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('AdminCms clients failed', ['err' => $e->getMessage()]);
+            return response()->json(['error' => 'Clients load failed: ' . substr($e->getMessage(), 0, 200)], 502);
+        }
+    }
+
     public function diag(Request $request)
     {
         // Unauthenticated diagnostic: surfaces effective session config + PHP upload
