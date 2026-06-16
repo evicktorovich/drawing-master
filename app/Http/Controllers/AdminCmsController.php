@@ -42,6 +42,168 @@ class AdminCmsController extends Controller
         return response()->json(['authed' => $request->session()->get('cms_admin') === true]);
     }
 
+    /**
+     * Paid orders per event (read-only), reconciled against Stripe.
+     *
+     * The public site counts "seats taken" by event_id alone (see WaitlistController::availability),
+     * but event_id slots get recycled across classes over time, so this groups by (event_id + name)
+     * and cross-checks the live Stripe Checkout sessions to surface:
+     *   - lost orders   (paid in Stripe, not recorded here → site shows too many free spots)
+     *   - stray records (recorded here / counted by the public badge, but a different class or a $0 test)
+     */
+    public function orders(Request $request)
+    {
+        if (!$request->session()->get('cms_admin')) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+
+        $SEP = "\x00";
+        $max = (int) config('services.event_max_attendees', 12);
+
+        // ---- DB side: paid leads, grouped by (event_id + event_name) ----
+        $leads = \App\Models\Lead::where('payment_status', 'paid')
+            ->orderBy('event_id')
+            ->orderBy('id')
+            ->get(['name', 'email', 'phone', 'event_id', 'event_name', 'event_price', 'event_date', 'created_at']);
+
+        $byId = [];     // event_id => count  (mirrors /api/availability — what the public badge subtracts)
+        $groups = [];   // "id\0name" => group
+        foreach ($leads as $l) {
+            $eid = (string) ($l->event_id ?? '');
+            $byId[$eid] = ($byId[$eid] ?? 0) + 1;
+            $key = $eid . $SEP . (string) $l->event_name;
+            if (!isset($groups[$key])) {
+                $groups[$key] = [
+                    'event_id'   => $eid,
+                    'event_name' => (string) $l->event_name,
+                    'event_date' => (string) $l->event_date,
+                    'orders'     => [],
+                ];
+            }
+            $groups[$key]['orders'][] = [
+                'name'   => (string) $l->name,
+                'email'  => (string) $l->email,
+                'phone'  => (string) $l->phone,
+                'amount' => $l->event_price !== null ? (float) $l->event_price : null,
+                'date'   => optional($l->created_at)->toDateString(),
+            ];
+        }
+
+        // ---- Waitlist counts per event (bonus context) ----
+        $waitlistById = [];
+        try {
+            $waitlistById = \App\Models\Waitlist::selectRaw('event_id, COUNT(*) as c')
+                ->groupBy('event_id')->pluck('c', 'event_id')->toArray();
+        } catch (\Throwable $e) {
+            // table optional in some environments
+        }
+
+        // ---- Stripe side: recent paid sessions (real), minus refunds and $0 tests ----
+        $stripe = ['ok' => false, 'error' => null, 'byKey' => [], 'byId' => []];
+        $windowDays = 220;
+        try {
+            $sk = config('services.stripe.secret');
+            if (!$sk) {
+                throw new \RuntimeException('STRIPE_SECRET not configured');
+            }
+            \Stripe\Stripe::setApiKey($sk);
+
+            $refunded = [];
+            foreach (\Stripe\Refund::all(['limit' => 100])->autoPagingIterator() as $r) {
+                if (!empty($r->payment_intent)) {
+                    $refunded[$r->payment_intent] = true;
+                }
+            }
+
+            $cutoff = now()->subDays($windowDays)->timestamp;
+            foreach (\Stripe\Checkout\Session::all(['limit' => 100, 'created' => ['gte' => $cutoff]])->autoPagingIterator() as $s) {
+                if (($s->payment_status ?? '') !== 'paid') {
+                    continue;
+                }
+                if ((int) ($s->amount_total ?? 0) <= 0) {
+                    continue; // skip $0 test purchases
+                }
+                if (!empty($s->payment_intent) && isset($refunded[$s->payment_intent])) {
+                    continue; // skip refunded
+                }
+                $eid   = (string) ($s->metadata->event_id ?? '');
+                $enm   = (string) ($s->metadata->eventName ?? '');
+                $email = (string) ($s->customer_email ?? ($s->customer_details->email ?? ''));
+                $key   = $eid . $SEP . $enm;
+                if (!isset($stripe['byKey'][$key])) {
+                    $stripe['byKey'][$key] = ['count' => 0, 'emails' => []];
+                }
+                $stripe['byKey'][$key]['count']++;
+                if ($email !== '') {
+                    $stripe['byKey'][$key]['emails'][] = $email;
+                }
+                $stripe['byId'][$eid] = ($stripe['byId'][$eid] ?? 0) + 1;
+            }
+            $stripe['ok'] = true;
+        } catch (\Throwable $e) {
+            $stripe['error'] = substr($e->getMessage(), 0, 200);
+            Log::warning('AdminCms orders Stripe reconcile failed', ['err' => $e->getMessage()]);
+        }
+
+        // ---- merge: union of DB groups and Stripe keys ----
+        $allKeys = array_values(array_unique(array_merge(array_keys($groups), array_keys($stripe['byKey']))));
+        $out = [];
+        foreach ($allKeys as $key) {
+            $parts = explode($SEP, $key, 2);
+            $eid   = $parts[0] ?? '';
+            $enm   = $parts[1] ?? '';
+            $orders   = $groups[$key]['orders'] ?? [];
+            $dbCount  = count($orders);
+            $dbEmails = array_map(fn ($o) => strtolower(trim((string) $o['email'])), $orders);
+            $sCount   = $stripe['ok'] ? ($stripe['byKey'][$key]['count'] ?? 0) : null;
+            $sEmails  = $stripe['byKey'][$key]['emails'] ?? [];
+            $sEmailsLc = array_map(fn ($e) => strtolower(trim($e)), $sEmails);
+
+            $stripeOnly = $stripe['ok']
+                ? array_values(array_unique(array_filter($sEmails, fn ($e) => $e !== '' && !in_array(strtolower(trim($e)), $dbEmails, true))))
+                : [];
+            $dbOnly = $stripe['ok']
+                ? array_values(array_unique(array_filter(
+                    array_map(fn ($o) => (string) $o['email'], $orders),
+                    fn ($e) => $e !== '' && !in_array(strtolower(trim($e)), $sEmailsLc, true)
+                )))
+                : [];
+
+            $out[] = [
+                'event_id'     => $eid,
+                'event_name'   => $enm !== '' ? $enm : '(no name)',
+                'event_date'   => $groups[$key]['event_date'] ?? '',
+                'orders'       => $orders,
+                'db_count'     => $dbCount,
+                'site_count'   => (int) ($byId[$eid] ?? 0),
+                'stripe_count' => $sCount,
+                'stripe_only'  => $stripeOnly,
+                'db_only'      => $dbOnly,
+                'waitlist'     => (int) ($waitlistById[$eid] ?? 0),
+                'mismatch'     => $stripe['ok'] ? ((int) $sCount !== $dbCount) : false,
+            ];
+        }
+
+        usort($out, function ($a, $b) {
+            if ($a['mismatch'] !== $b['mismatch']) {
+                return $a['mismatch'] ? -1 : 1;
+            }
+            return ((int) $a['event_id']) <=> ((int) $b['event_id']);
+        });
+
+        return response()->json([
+            'generated_at'      => now()->toIso8601String(),
+            'max'               => $max,
+            'total_db_paid'     => $leads->count(),
+            'stripe_ok'         => $stripe['ok'],
+            'stripe_error'      => $stripe['error'],
+            'stripe_window_days' => $windowDays,
+            'site_paid_by_id'   => $byId,
+            'stripe_paid_by_id' => $stripe['ok'] ? $stripe['byId'] : null,
+            'groups'            => $out,
+        ]);
+    }
+
     public function diag(Request $request)
     {
         // Unauthenticated diagnostic: surfaces effective session config + PHP upload
