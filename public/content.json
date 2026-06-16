@@ -93,7 +93,7 @@
             "modalDescription": "Paint the romance of Venice at sunset while exploring luminous watercolor washes, atmospheric light, and the magic of reflections on water. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 5
+            "maxAttendees": null
         },
         {
             "id": 14,
@@ -249,5 +249,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-06-16T16:51:32+00:00"
+    "updatedAt": "2026-06-16T17:37:29+00:00"
 }
