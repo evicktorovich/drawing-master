@@ -1,22 +1,6 @@
 {
     "events": [
         {
-            "id": 7,
-            "eventName": "ALONG THE FENCE ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-06-12",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "j3.PNG",
-            "modalDescription": "A vibrant acrylic composition where color and texture guide the eye into depth and distance. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": 9
-        },
-        {
             "id": 10,
             "eventName": "AFTERGLOW WATERCOLOR CLASS",
             "startDate": null,
@@ -30,23 +14,7 @@
             "modalDescription": "A quiet moment where the last light lingers over water and fades into evening stillness. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 7
-        },
-        {
-            "id": 11,
-            "eventName": "AT THE FOREST EDGE ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-06-26",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "j1.PNG",
-            "modalDescription": "An expressive acrylic composition revealing depth and calm through layered greens and light. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": 11
+            "maxAttendees": 6
         },
         {
             "id": 12,
@@ -77,7 +45,7 @@
             "modalDescription": "Join us for a relaxing and beginner-friendly workshop where you’ll learn how to create luminous colors, soft watercolor transitions, and expressive brushwork while painting this vibrant little bird. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 4
         },
         {
             "id": 2,
@@ -93,7 +61,7 @@
             "modalDescription": "An expressive impasto interpretation of the skyline, where abstract texture meets the rhythm of the city. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 6
         },
         {
             "id": 3,
@@ -108,7 +76,8 @@
             "img": "assets/img/uploaded/1780460409-img-8503.png",
             "modalDescription": "Immerse yourself in the beauty of Provence as we capture glowing lavender fields with expressive acrylic brushwork and rich, vibrant color. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
-            "modalDiscount": null
+            "modalDiscount": null,
+            "maxAttendees": 8
         },
         {
             "id": 13,
@@ -124,7 +93,7 @@
             "modalDescription": "Paint the romance of Venice at sunset while exploring luminous watercolor washes, atmospheric light, and the magic of reflections on water. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 5
         },
         {
             "id": 14,
@@ -140,7 +109,7 @@
             "modalDescription": "Bring one of Canada’s most iconic landscapes to life as we paint the turquoise waters and majestic peaks of Spirit Island in expressive acrylics.  Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 2
         },
         {
             "id": 15,
@@ -156,7 +125,7 @@
             "modalDescription": "Celebrate the quiet beauty of the prairies as we paint expansive skies, rolling hills, and luminous watercolor landscapes inspired by Alberta’s countryside. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 6
         },
         {
             "id": 16,
@@ -172,7 +141,7 @@
             "modalDescription": "Discover the beauty of hydrangeas as we create a vibrant floral painting with expressive acrylic brushwork and luminous color. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 6
         },
         {
             "id": 17,
@@ -188,7 +157,7 @@
             "modalDescription": "Turn your favorite pet photo into a charming watercolor portrait while learning expressive washes, soft edges, and techniques for capturing personality and character.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 6
         }
     ],
     "regularClasses": [
@@ -280,5 +249,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-06-15T04:08:08+00:00"
+    "updatedAt": "2026-06-16T16:51:32+00:00"
 }
