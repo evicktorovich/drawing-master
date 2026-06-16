@@ -627,10 +627,11 @@ createApp({
       const gmap = new Map((data.groups || []).map(g => [keyOf(g.event_id, g.event_name), g]));
       const used = new Set();
       const current = [];
-      const curEvents = [
-        ...(content.value?.events || []),
-        ...(content.value?.regularClasses || []),
-      ];
+      // Reconcile only dated upcoming events — that's where "spots left" and the
+      // DB/Stripe match are meaningful. Recurring "regular classes" have no fixed
+      // capacity and accumulate orders over a long time, so flagging them as
+      // mismatches would be noise.
+      const curEvents = (content.value?.events || []);
       for (const ev of curEvents) {
         const k = keyOf(ev.id, ev.eventName);
         const g = gmap.get(k);
@@ -647,7 +648,10 @@ createApp({
           });
         }
       }
-      const stray = (data.groups || []).filter(g => !used.has(keyOf(g.event_id, g.event_name)));
+      // Only rows that actually exist in the database (db_count > 0) and don't match a
+      // current event. Excludes the long tail of past classes that live only in Stripe
+      // history (db_count 0) — those aren't "in the database" and aren't actionable here.
+      const stray = (data.groups || []).filter(g => g.db_count > 0 && !used.has(keyOf(g.event_id, g.event_name)));
       return { current, stray };
     });
 
