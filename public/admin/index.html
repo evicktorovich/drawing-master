@@ -129,6 +129,11 @@
   .chips{display:flex;gap:8px;flex-wrap:wrap;}
   .cl-search{width:100%;max-width:360px;font:inherit;border:1px solid var(--border);border-radius:10px;padding:9px 12px;background:#fff;margin-bottom:12px;}
   .cl-search:focus{outline:none;border-color:var(--peach-deep);box-shadow:0 0 0 3px rgba(255,167,105,.18);}
+  .off-input{width:60px;text-align:right;font:inherit;border:1px solid var(--border);border-radius:8px;padding:4px 6px;background:#fff;}
+  .off-input:focus{outline:none;border-color:var(--peach-deep);box-shadow:0 0 0 2px rgba(255,167,105,.18);}
+  .pager{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:13px;}
+  .pager button{background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;}
+  .pager button:disabled{opacity:.4;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -176,7 +181,7 @@
         <h1 style="font-size:30px;">{{ tabTitle }}</h1>
         <div class="status" :class="statusClass">{{ statusText }}</div>
       </div>
-      <button v-if="tab==='orders'" class="btn btn-outline" @click="loadOrders" :disabled="ordersLoading">
+      <button v-if="tab==='orders' && !dirty" class="btn btn-outline" @click="loadOrders" :disabled="ordersLoading">
         <span v-if="ordersLoading" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
         <span v-else>Refresh</span>
       </button>
@@ -186,7 +191,7 @@
       </button>
       <button v-else class="btn btn-peach" @click="save" :disabled="!dirty || saving">
         <span v-if="saving" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
-        <span v-else>Save & publish</span>
+        <span v-else>Save &amp; publish</span>
       </button>
     </div>
 
@@ -456,7 +461,7 @@
                 </td>
                 <td class="num">{{ r.cap }}</td>
                 <td class="num">{{ r.stripe }}</td>
-                <td class="num">{{ r.offline }}</td>
+                <td class="num"><input class="off-input" type="number" min="0" :value="r.offline" @click.stop @change="setOffline(r.id, $event.target.value)" title="Offline / cash / e-transfer bookings — edit and click Save & publish"></td>
                 <td class="num"><span class="ord-badge" :class="r.left<=3 ? 'ord-warn' : 'ord-spots'">{{ r.left }}</span></td>
               </tr>
               <tr v-if="expanded[r.id]" class="seat-detail">
@@ -521,15 +526,22 @@
 
         <h3 style="font-size:16px;margin:22px 0 8px;">Top classes</h3>
         <div class="chips">
-          <span v-for="c in clientsData.top_classes" :key="c.name" class="ord-badge ord-soft">{{ c.name }} · {{ c.count }}</span>
+          <span v-for="c in clientsData.top_classes" :key="c.name" class="ord-badge ord-soft">{{ c.name }} · {{ c.count }} paid</span>
         </div>
 
         <h3 style="font-size:16px;margin:24px 0 8px;">Clients ({{ filteredClients.length }})</h3>
-        <input class="cl-search" v-model="clientSearch" placeholder="Search name or email…">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+          <div class="seg" style="margin:0;">
+            <button :class="{active:clientFilter==='all'}" @click="clientFilter='all'">All</button>
+            <button :class="{active:clientFilter==='repeat'}" @click="clientFilter='repeat'">Repeat</button>
+            <button :class="{active:clientFilter==='new'}" @click="clientFilter='new'">New this month</button>
+          </div>
+          <input class="cl-search" style="margin:0;flex:1;min-width:200px;" v-model="clientSearch" placeholder="Search name or email…">
+        </div>
         <table class="ord-table">
           <thead><tr><th>Name</th><th>Email</th><th class="num">Classes</th><th class="num">Spent</th><th>First</th><th>Last</th></tr></thead>
           <tbody>
-            <tr v-for="c in filteredClients" :key="c.email">
+            <tr v-for="c in pagedClients" :key="c.email">
               <td>{{ c.name || '—' }}<span v-if="c.orders>1" class="ord-badge ord-soft" style="margin-left:6px;">×{{ c.orders }}</span></td>
               <td>{{ c.email }}</td>
               <td class="num">{{ c.classes_count }}</td>
@@ -540,6 +552,12 @@
           </tbody>
         </table>
         <p v-if="filteredClients.length===0" class="empty" style="margin-top:10px;">No clients match.</p>
+        <div v-if="clientPages>1" class="pager">
+          <button @click="clientPage=Math.max(1,clientPage-1)" :disabled="clientPage<=1">‹ Prev</button>
+          <span>Page {{ clientPage }} / {{ clientPages }}</span>
+          <button @click="clientPage=Math.min(clientPages,clientPage+1)" :disabled="clientPage>=clientPages">Next ›</button>
+          <span style="opacity:.55;">showing {{ pagedClients.length }} of {{ filteredClients.length }}</span>
+        </div>
       </template>
     </template>
 
@@ -611,6 +629,9 @@ createApp({
     const clientsLoading = ref(false);
     const clientsError = ref('');
     const clientSearch = ref('');
+    const clientFilter = ref('all');
+    const clientPage = ref(1);
+    const CLIENTS_PER_PAGE = 25;
     // After a fresh upload the file is committed to GitHub but not yet served by Railway
     // (autodeploy takes a few minutes). Keep a local data-URL preview keyed by the canonical
     // path so the card thumbnail shows the new image immediately instead of a broken icon.
@@ -650,6 +671,18 @@ createApp({
     });
 
     const markDirty = () => { dirty.value = true; status.value = { type: 'idle' }; };
+
+    // Edit offline (cash / e-transfer) booking count for an event straight from the
+    // seats table. Writes to the same content.json field the events editor uses;
+    // takes effect on the public site after Save & publish.
+    function setOffline(id, val) {
+      const ev = (content.value?.events || []).find(e => e.id === id);
+      if (!ev) return;
+      const n = Math.max(0, parseInt(val, 10) || 0);
+      if (ev.bookedOffline === n) return;
+      ev.bookedOffline = n;
+      markDirty();
+    }
 
     // Derived text fields
     const whyLeftItemsText = computed({
@@ -800,13 +833,27 @@ createApp({
     const filteredClients = computed(() => {
       const data = clientsData.value;
       if (!data) return [];
+      let list = data.clients;
+      if (clientFilter.value === 'repeat') list = list.filter(c => c.orders > 1);
+      else if (clientFilter.value === 'new') {
+        const ym = todayStr().slice(0, 7);
+        list = list.filter(c => String(c.first || '').slice(0, 7) === ym);
+      }
       const q = clientSearch.value.trim().toLowerCase();
-      if (!q) return data.clients;
-      return data.clients.filter(c =>
+      if (q) list = list.filter(c =>
         String(c.name || '').toLowerCase().includes(q) ||
         String(c.email || '').toLowerCase().includes(q)
       );
+      return list;
     });
+
+    const clientPages = computed(() => Math.max(1, Math.ceil(filteredClients.value.length / CLIENTS_PER_PAGE)));
+    const pagedClients = computed(() => {
+      const start = (clientPage.value - 1) * CLIENTS_PER_PAGE;
+      return filteredClients.value.slice(start, start + CLIENTS_PER_PAGE);
+    });
+
+    watch([clientSearch, clientFilter], () => { clientPage.value = 1; });
 
     watch(tab, (v) => {
       if (v === 'orders' && !ordersData.value && !ordersLoading.value) loadOrders();
@@ -1017,6 +1064,7 @@ createApp({
       ordersData, ordersLoading, ordersError, ordersView, loadOrders, fmtTime, dupEmail, spotsLeft,
       bookingsView, bookingRows, activeBookingRows, expanded, toggleRow,
       clientsData, clientsLoading, clientsError, clientSearch, loadClients, filteredClients, fmtMoney,
+      clientFilter, clientPage, pagedClients, clientPages, setOffline,
     };
   }
 }).mount('#app');
