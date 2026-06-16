@@ -282,6 +282,55 @@ class AdminCmsController extends Controller
                 }
             }
 
+            // Fold in named offline bookings from content.json so offline-paid clients
+            // show up here too (and feed the broadcast audience). They already count
+            // toward seats via bookedOffline; this is for the client record.
+            try {
+                $cjPath = public_path('content.json');
+                if (is_file($cjPath)) {
+                    $cj = json_decode((string) file_get_contents($cjPath), true);
+                    foreach (($cj['events'] ?? []) as $ev) {
+                        $price = (float) ($ev['price'] ?? 0);
+                        $cls   = (string) ($ev['eventName'] ?? '');
+                        foreach (($ev['offlineBookings'] ?? []) as $ob) {
+                            $email = strtolower(trim((string) ($ob['email'] ?? '')));
+                            if ($email === '') {
+                                continue; // no contact → can't be a client record
+                            }
+                            $name  = trim((string) ($ob['name'] ?? ''));
+                            $phone = (string) ($ob['phone'] ?? '');
+                            $date  = (string) ($ob['date'] ?? '');
+                            if (!isset($byEmail[$email])) {
+                                $byEmail[$email] = [
+                                    'email' => (string) ($ob['email'] ?? $email),
+                                    'name' => $name, 'phone' => $phone,
+                                    'orders' => 0, 'spent' => 0.0,
+                                    'first' => $date ?: null, 'last' => $date ?: null,
+                                    'classes' => [], 'offline' => true,
+                                ];
+                            }
+                            $c = &$byEmail[$email];
+                            $c['orders']++;
+                            $c['spent'] += $price;
+                            $c['offline'] = true;
+                            if ($name !== '')  $c['name']  = $name;
+                            if ($phone !== '') $c['phone'] = $phone;
+                            if ($date !== '') {
+                                if (empty($c['first']) || $date < $c['first']) $c['first'] = $date;
+                                if (empty($c['last'])  || $date > $c['last'])  $c['last']  = $date;
+                            }
+                            if ($cls !== '') {
+                                $c['classes'][] = $cls;
+                                $classCounts[$cls] = ($classCounts[$cls] ?? 0) + 1;
+                            }
+                            unset($c);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('AdminCms clients offline-merge failed', ['err' => $e->getMessage()]);
+            }
+
             $clients = [];
             foreach ($byEmail as $c) {
                 $c['classes']       = array_values(array_unique($c['classes']));

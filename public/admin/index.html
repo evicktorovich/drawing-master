@@ -131,6 +131,8 @@
   .cl-search:focus{outline:none;border-color:var(--peach-deep);box-shadow:0 0 0 3px rgba(255,167,105,.18);}
   .off-input{width:60px;text-align:right;font:inherit;border:1px solid var(--border);border-radius:8px;padding:4px 6px;background:#fff;}
   .off-input:focus{outline:none;border-color:var(--peach-deep);box-shadow:0 0 0 2px rgba(255,167,105,.18);}
+  .off-add{font:inherit;font-size:13px;border:1px solid var(--border);border-radius:8px;padding:6px 9px;background:#fff;min-width:130px;}
+  .off-add:focus{outline:none;border-color:var(--peach-deep);box-shadow:0 0 0 2px rgba(255,167,105,.18);}
   .pager{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:13px;}
   .pager button{background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;}
   .pager button:disabled{opacity:.4;cursor:not-allowed;}
@@ -467,7 +469,8 @@
               <tr v-if="expanded[r.id]" class="seat-detail">
                 <td></td>
                 <td colspan="5">
-                  <table v-if="r.orders.length" class="ord-table" style="margin:4px 0;">
+                  <div style="font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin:2px 0;">Paid online (Stripe)</div>
+                  <table v-if="r.orders.length" class="ord-table" style="margin:2px 0;">
                     <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th class="num">Amount</th></tr></thead>
                     <tbody>
                       <tr v-for="(o,i) in r.orders" :key="i">
@@ -479,7 +482,27 @@
                       </tr>
                     </tbody>
                   </table>
-                  <div v-else style="opacity:.6;font-size:13px;padding:6px 8px;">No paid orders yet.</div>
+                  <div v-else style="opacity:.6;font-size:13px;padding:4px 8px;">No online orders yet.</div>
+
+                  <div style="font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin:12px 0 2px;">Offline bookings (cash / e-transfer) — {{ r.offlineList.length }} named of {{ r.offline }}</div>
+                  <table v-if="r.offlineList.length" class="ord-table" style="margin:2px 0;">
+                    <tbody>
+                      <tr v-for="(b,i) in r.offlineList" :key="i">
+                        <td>{{ b.name || '—' }}</td>
+                        <td>{{ b.email || '—' }}</td>
+                        <td>{{ b.phone || '—' }}</td>
+                        <td style="font-size:12px;opacity:.6;">{{ b.date || '' }}</td>
+                        <td class="num"><button class="btn-danger btn" style="padding:3px 10px;font-size:12px;" @click.stop="removeOffline(r.id, i)">Remove</button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px;" @click.stop>
+                    <input class="off-add" v-model="getOfflineForm(r.id).name" placeholder="Name *">
+                    <input class="off-add" v-model="getOfflineForm(r.id).email" placeholder="Email (for newsletter)">
+                    <input class="off-add" v-model="getOfflineForm(r.id).phone" placeholder="Phone">
+                    <button class="btn btn-peach" style="padding:7px 16px;font-size:13px;" @click.stop="addOffline(r.id)">+ Add offline</button>
+                  </div>
+                  <div style="font-size:11px;opacity:.5;margin-top:4px;">Adding a name raises this class's offline count. Remember to Save &amp; publish.</div>
                 </td>
               </tr>
             </template>
@@ -624,6 +647,7 @@ createApp({
     const ordersError = ref('');
     const bookingsView = ref('upcoming');
     const expanded = reactive({});
+    const offlineForms = reactive({}); // per-event { name, email, phone } add-form state
     // Clients tab (read-only, lazy-loaded)
     const clientsData = ref(null);
     const clientsLoading = ref(false);
@@ -678,9 +702,39 @@ createApp({
     function setOffline(id, val) {
       const ev = (content.value?.events || []).find(e => e.id === id);
       if (!ev) return;
-      const n = Math.max(0, parseInt(val, 10) || 0);
+      const named = Array.isArray(ev.offlineBookings) ? ev.offlineBookings.length : 0;
+      const n = Math.max(named, parseInt(val, 10) || 0); // never below the named count
       if (ev.bookedOffline === n) return;
       ev.bookedOffline = n;
+      markDirty();
+    }
+
+    // Named offline bookings (cash / e-transfer) kept in content.json per event.
+    function getOfflineForm(id) {
+      if (!offlineForms[id]) offlineForms[id] = { name: '', email: '', phone: '' };
+      return offlineForms[id];
+    }
+    function addOffline(id) {
+      const f = offlineForms[id];
+      if (!f || !String(f.name).trim()) return;
+      const ev = (content.value?.events || []).find(e => e.id === id);
+      if (!ev) return;
+      if (!Array.isArray(ev.offlineBookings)) ev.offlineBookings = [];
+      ev.offlineBookings.push({
+        name: String(f.name).trim(),
+        email: String(f.email || '').trim(),
+        phone: String(f.phone || '').trim(),
+        date: todayStr(),
+      });
+      if (ev.offlineBookings.length > (Number(ev.bookedOffline) || 0)) ev.bookedOffline = ev.offlineBookings.length;
+      offlineForms[id] = { name: '', email: '', phone: '' };
+      markDirty();
+    }
+    function removeOffline(id, idx) {
+      const ev = (content.value?.events || []).find(e => e.id === id);
+      if (!ev || !Array.isArray(ev.offlineBookings)) return;
+      ev.offlineBookings.splice(idx, 1);
+      ev.bookedOffline = Math.max(ev.offlineBookings.length, (Number(ev.bookedOffline) || 1) - 1);
       markDirty();
     }
 
@@ -799,6 +853,7 @@ createApp({
           siteLeft: Math.max(0, cap - siteCount - offline),
           stripe_only: g ? g.stripe_only : [],
           orders: g ? g.orders : [],
+          offlineList: Array.isArray(ev.offlineBookings) ? ev.offlineBookings : [],
           isPast: ev.date && ev.date !== '%' && ev.date < today,
         };
       });
@@ -1065,6 +1120,7 @@ createApp({
       bookingsView, bookingRows, activeBookingRows, expanded, toggleRow,
       clientsData, clientsLoading, clientsError, clientSearch, loadClients, filteredClients, fmtMoney,
       clientFilter, clientPage, pagedClients, clientPages, setOffline,
+      getOfflineForm, addOffline, removeOffline,
     };
   }
 }).mount('#app');
