@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -218,46 +219,22 @@ class AdminCmsController extends Controller
         }
 
         try {
-            $sk = config('services.stripe.secret');
-            if (!$sk) {
-                throw new \RuntimeException('STRIPE_SECRET not configured');
-            }
-            \Stripe\Stripe::setApiKey($sk);
-
-            $refunded = [];
-            foreach (\Stripe\Refund::all(['limit' => 100])->autoPagingIterator() as $r) {
-                if (!empty($r->payment_intent)) {
-                    $refunded[$r->payment_intent] = true;
-                }
-            }
+            $sessions = $this->stripePaidSessions($request->boolean('fresh'));
 
             $byEmail = [];
             $classCounts = [];
             $thisMonth = now()->format('Y-m');
 
-            foreach (\Stripe\Checkout\Session::all(['limit' => 100])->autoPagingIterator() as $s) {
-                if (($s->payment_status ?? '') !== 'paid') {
-                    continue;
-                }
-                if ((int) ($s->amount_total ?? 0) <= 0) {
-                    continue;
-                }
-                if (!empty($s->payment_intent) && isset($refunded[$s->payment_intent])) {
-                    continue;
-                }
-                $email = strtolower(trim((string) ($s->customer_email ?? ($s->customer_details->email ?? ''))));
+            foreach ($sessions as $s) {
+                $email = $s['email'];
                 if ($email === '') {
                     continue;
                 }
-                $name  = trim((string) ($s->customer_details->name ?? ($s->metadata->name ?? '')));
-                $phone = (string) ($s->metadata->phone ?? '');
-                $amt   = (float) (($s->amount_total ?? 0) / 100);
-                $date  = date('Y-m-d', (int) $s->created);
-                $cls   = (string) ($s->metadata->eventName ?? '');
+                $name = $s['name']; $phone = $s['phone']; $amt = $s['amount']; $date = $s['date']; $cls = $s['eventName'];
 
                 if (!isset($byEmail[$email])) {
                     $byEmail[$email] = [
-                        'email'   => (string) ($s->customer_email ?: $email),
+                        'email'   => $email,
                         'name'    => $name,
                         'phone'   => $phone,
                         'orders'  => 0,
@@ -363,6 +340,184 @@ class AdminCmsController extends Controller
             Log::error('AdminCms clients failed', ['err' => $e->getMessage()]);
             return response()->json(['error' => 'Clients load failed: ' . substr($e->getMessage(), 0, 200)], 502);
         }
+    }
+
+    /**
+     * Broadcast audience (read-only): newsletter subscribers + past clients
+     * (Stripe + named offline), excluding anyone already booked on an upcoming
+     * (future-dated) event. For the re-engagement broadcast — no email is sent here.
+     */
+    public function audience(Request $request)
+    {
+        if (!$request->session()->get('cms_admin')) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+
+        try {
+            $sessions = $this->stripePaidSessions($request->boolean('fresh'));
+            $cj = json_decode((string) @file_get_contents(public_path('content.json')), true) ?: [];
+            $today = now()->format('Y-m-d');
+
+            // Who's already booked on an upcoming event → exclude from re-engagement.
+            $upcomingNames = [];
+            $exclude = [];
+            foreach (($cj['events'] ?? []) as $ev) {
+                $d = (string) ($ev['date'] ?? '');
+                if ($d === '' || $d === '%' || $d < $today) {
+                    continue;
+                }
+                $nm = (string) ($ev['eventName'] ?? '');
+                if ($nm !== '') $upcomingNames[$nm] = true;
+                foreach (($ev['offlineBookings'] ?? []) as $ob) {
+                    $e = strtolower(trim((string) ($ob['email'] ?? '')));
+                    if ($e !== '') $exclude[$e] = true;
+                }
+            }
+            foreach ($sessions as $s) {
+                if ($s['email'] !== '' && isset($upcomingNames[$s['eventName']])) {
+                    $exclude[$s['email']] = true;
+                }
+            }
+
+            // Past clients: Stripe payers + named offline bookings.
+            $byEmail = [];
+            $touch = function (string $email, string $name, ?string $date, string $src) use (&$byEmail) {
+                if ($email === '') return;
+                if (!isset($byEmail[$email])) {
+                    $byEmail[$email] = ['email' => $email, 'name' => $name, 'sources' => [], 'last' => $date];
+                }
+                $byEmail[$email]['sources'][$src] = true;
+                if ($name !== '') $byEmail[$email]['name'] = $name;
+                if ($date && (empty($byEmail[$email]['last']) || $date > $byEmail[$email]['last'])) {
+                    $byEmail[$email]['last'] = $date;
+                }
+            };
+            foreach ($sessions as $s) {
+                $touch($s['email'], $s['name'], $s['date'], 'client');
+            }
+            foreach (($cj['events'] ?? []) as $ev) {
+                foreach (($ev['offlineBookings'] ?? []) as $ob) {
+                    $touch(
+                        strtolower(trim((string) ($ob['email'] ?? ''))),
+                        trim((string) ($ob['name'] ?? '')),
+                        (string) ($ob['date'] ?? '') ?: null,
+                        'client'
+                    );
+                }
+            }
+
+            // Newsletter subscribers (Google Sheet) — optional / defensive.
+            $subscriberError = null;
+            try {
+                foreach ($this->newsletterSubscribers($request->boolean('fresh')) as $sub) {
+                    $touch(strtolower(trim((string) ($sub['email'] ?? ''))), (string) ($sub['name'] ?? ''), null, 'subscriber');
+                }
+            } catch (\Throwable $e) {
+                $subscriberError = substr($e->getMessage(), 0, 200);
+                Log::warning('AdminCms audience subscriber read failed', ['err' => $e->getMessage()]);
+            }
+
+            $recipients = [];
+            foreach ($byEmail as $email => $r) {
+                if (isset($exclude[$email])) {
+                    continue;
+                }
+                $isClient = isset($r['sources']['client']);
+                $isSub    = isset($r['sources']['subscriber']);
+                $recipients[] = [
+                    'email'  => $r['email'],
+                    'name'   => $r['name'],
+                    'source' => ($isClient && $isSub) ? 'both' : ($isClient ? 'client' : 'subscriber'),
+                    'last'   => $r['last'],
+                ];
+            }
+            usort($recipients, fn ($a, $b) => strcmp((string) $b['last'], (string) $a['last']));
+
+            $bySource = ['client' => 0, 'subscriber' => 0, 'both' => 0];
+            foreach ($recipients as $r) {
+                $bySource[$r['source']]++;
+            }
+
+            return response()->json([
+                'generated_at'     => now()->toIso8601String(),
+                'summary'          => ['total' => count($recipients), 'by_source' => $bySource, 'excluded_upcoming' => count($exclude)],
+                'subscriber_error' => $subscriberError,
+                'recipients'       => $recipients,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('AdminCms audience failed', ['err' => $e->getMessage()]);
+            return response()->json(['error' => 'Audience load failed: ' . substr($e->getMessage(), 0, 200)], 502);
+        }
+    }
+
+    /** All paid Stripe Checkout sessions (minus refunds and $0 tests), cached 10 min. */
+    private function stripePaidSessions(bool $fresh = false): array
+    {
+        $key = 'cms:stripe_paid_sessions';
+        if ($fresh) {
+            Cache::store('file')->forget($key);
+        }
+        return Cache::store('file')->remember($key, 600, function () {
+            $sk = config('services.stripe.secret');
+            if (!$sk) {
+                throw new \RuntimeException('STRIPE_SECRET not configured');
+            }
+            \Stripe\Stripe::setApiKey($sk);
+
+            $refunded = [];
+            foreach (\Stripe\Refund::all(['limit' => 100])->autoPagingIterator() as $r) {
+                if (!empty($r->payment_intent)) {
+                    $refunded[$r->payment_intent] = true;
+                }
+            }
+
+            $out = [];
+            foreach (\Stripe\Checkout\Session::all(['limit' => 100])->autoPagingIterator() as $s) {
+                if (($s->payment_status ?? '') !== 'paid') continue;
+                if ((int) ($s->amount_total ?? 0) <= 0) continue;
+                if (!empty($s->payment_intent) && isset($refunded[$s->payment_intent])) continue;
+                $out[] = [
+                    'email'     => strtolower(trim((string) ($s->customer_email ?? ($s->customer_details->email ?? '')))),
+                    'name'      => trim((string) ($s->customer_details->name ?? ($s->metadata->name ?? ''))),
+                    'phone'     => (string) ($s->metadata->phone ?? ''),
+                    'amount'    => (float) (($s->amount_total ?? 0) / 100),
+                    'date'      => date('Y-m-d', (int) $s->created),
+                    'eventName' => (string) ($s->metadata->eventName ?? ''),
+                ];
+            }
+            return $out;
+        });
+    }
+
+    /** Newsletter subscribers from the signup Google Sheet ([timestamp, name, email]), cached 10 min. */
+    private function newsletterSubscribers(bool $fresh = false): array
+    {
+        $sheetId  = env('GOOGLE_SHEET_ID');
+        $credPath = storage_path('app/google/credentials.json');
+        if (!$sheetId || !is_file($credPath)) {
+            return [];
+        }
+        $key = 'cms:subscribers';
+        if ($fresh) {
+            Cache::store('file')->forget($key);
+        }
+        return Cache::store('file')->remember($key, 600, function () use ($sheetId, $credPath) {
+            $client = new \Google_Client();
+            $client->setScopes([\Google_Service_Sheets::SPREADSHEETS_READONLY]);
+            $client->setAuthConfig($credPath);
+            $service = new \Google_Service_Sheets($client);
+            $rows = $service->spreadsheets_values->get($sheetId, 'A:C')->getValues() ?: [];
+            $out = [];
+            foreach ($rows as $row) {
+                $name  = $row[1] ?? '';
+                $email = $row[2] ?? '';
+                if (!is_string($email) || strpos($email, '@') === false) {
+                    continue; // header / blank / malformed
+                }
+                $out[] = ['name' => (string) $name, 'email' => (string) $email];
+            }
+            return $out;
+        });
     }
 
     public function diag(Request $request)

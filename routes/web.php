@@ -33,4 +33,5 @@ Route::prefix('cms')->group(function () {
     Route::post('/upload', [\App\Http\Controllers\AdminCmsController::class, 'upload']);
     Route::get('/orders',  [\App\Http\Controllers\AdminCmsController::class, 'orders']);
     Route::get('/clients', [\App\Http\Controllers\AdminCmsController::class, 'clients']);
+    Route::get('/audience', [\App\Http\Controllers\AdminCmsController::class, 'audience']);
 });

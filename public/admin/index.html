@@ -170,6 +170,7 @@
       <button :class="{active:tab==='text'}" @click="tab='text'">Site text</button>
       <button :class="{active:tab==='orders'}" @click="tab='orders'">Payments</button>
       <button :class="{active:tab==='clients'}" @click="tab='clients'">Clients</button>
+      <button :class="{active:tab==='broadcast'}" @click="tab='broadcast'">Broadcast</button>
     </nav>
     <div class="footer">
       <button @click="reload">Reload from GitHub</button>
@@ -189,6 +190,10 @@
       </button>
       <button v-else-if="tab==='clients'" class="btn btn-outline" @click="loadClients" :disabled="clientsLoading">
         <span v-if="clientsLoading" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
+        <span v-else>Refresh</span>
+      </button>
+      <button v-else-if="tab==='broadcast'" class="btn btn-outline" @click="loadAudience" :disabled="audienceLoading">
+        <span v-if="audienceLoading" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
         <span v-else>Refresh</span>
       </button>
       <button v-else class="btn btn-peach" @click="save" :disabled="!dirty || saving">
@@ -584,6 +589,71 @@
       </template>
     </template>
 
+    <!-- BROADCAST (draft mode — no email is sent) -->
+    <template v-if="tab==='broadcast'">
+      <p class="desc" style="margin-top:-14px;">Re-engagement email to subscribers + past clients <strong>not</strong> booked on an upcoming class. <strong>Draft mode — nothing is sent.</strong> Export the list and copy the email; sending hooks up later.</p>
+
+      <div v-if="audienceLoading && !audienceData" class="empty">
+        <span class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span> Building audience…
+      </div>
+      <div v-else-if="audienceError" class="empty" style="color:#b53030;">{{ audienceError }}</div>
+
+      <template v-else-if="audienceData">
+        <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="stat"><div class="stat-n">{{ audienceData.summary.total }}</div><div class="stat-l">Recipients</div></div>
+          <div class="stat"><div class="stat-n">{{ audienceData.summary.by_source.subscriber }}</div><div class="stat-l">Subscribers</div></div>
+          <div class="stat"><div class="stat-n">{{ audienceData.summary.by_source.client + audienceData.summary.by_source.both }}</div><div class="stat-l">Past clients</div></div>
+          <div class="stat"><div class="stat-n">{{ audienceData.summary.excluded_upcoming }}</div><div class="stat-l">Excluded (booked)</div></div>
+        </div>
+        <div v-if="audienceData.subscriber_error" class="ord-flag">Subscriber list unavailable ({{ audienceData.subscriber_error }}) — showing past clients only.</div>
+
+        <div class="grid-2" style="align-items:start;margin-top:18px;">
+          <div>
+            <h3 style="font-size:16px;margin:0 0 8px;">Compose</h3>
+            <div class="field"><label>Subject</label><input v-model="bcSubject"></div>
+            <div class="field"><label>Body — use {name} for the first name</label><textarea v-model="bcBody" style="min-height:230px;"></textarea></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-peach" @click="downloadRecipientsCsv" :disabled="filteredRecipients.length===0">Download recipients (CSV)</button>
+              <button class="btn btn-outline" @click="copyEmail">{{ copied ? 'Copied ✓' : 'Copy email text' }}</button>
+            </div>
+            <p class="desc" style="margin-top:8px;">A CASL footer (studio identity + unsubscribe) is added automatically below your text — required by law for marketing email.</p>
+          </div>
+          <div>
+            <h3 style="font-size:16px;margin:0 0 8px;">Preview <span style="font-size:12px;opacity:.55;">(as {{ previewName }})</span></h3>
+            <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;">
+              <div style="font-weight:600;margin-bottom:10px;">{{ bcSubject }}</div>
+              <div style="white-space:pre-wrap;font-size:14px;line-height:1.55;">{{ previewBody }}</div>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-size:16px;margin:24px 0 8px;">Recipients ({{ filteredRecipients.length }})</h3>
+        <div class="seg" style="margin:0 0 12px;">
+          <button :class="{active:bcFilter==='all'}" @click="bcFilter='all'">All</button>
+          <button :class="{active:bcFilter==='subscriber'}" @click="bcFilter='subscriber'">Subscribers</button>
+          <button :class="{active:bcFilter==='client'}" @click="bcFilter='client'">Past clients</button>
+        </div>
+        <table class="ord-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Source</th><th>Last</th></tr></thead>
+          <tbody>
+            <tr v-for="r in pagedRecipients" :key="r.email">
+              <td>{{ r.name || '—' }}</td>
+              <td>{{ r.email }}</td>
+              <td><span class="ord-badge ord-soft">{{ r.source }}</span></td>
+              <td style="font-size:12px;white-space:nowrap;">{{ r.last || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-if="filteredRecipients.length===0" class="empty" style="margin-top:10px;">No recipients in this segment.</p>
+        <div v-if="bcPages>1" class="pager">
+          <button @click="bcPage=Math.max(1,bcPage-1)" :disabled="bcPage<=1">‹ Prev</button>
+          <span>Page {{ bcPage }} / {{ bcPages }}</span>
+          <button @click="bcPage=Math.min(bcPages,bcPage+1)" :disabled="bcPage>=bcPages">Next ›</button>
+          <span style="opacity:.55;">showing {{ pagedRecipients.length }} of {{ filteredRecipients.length }}</span>
+        </div>
+      </template>
+    </template>
+
   </main>
 </div>
 
@@ -656,6 +726,17 @@ createApp({
     const clientFilter = ref('all');
     const clientPage = ref(1);
     const CLIENTS_PER_PAGE = 25;
+    // Broadcast tab (draft mode)
+    const audienceData = ref(null);
+    const audienceLoading = ref(false);
+    const audienceError = ref('');
+    const bcFilter = ref('all');
+    const bcPage = ref(1);
+    const copied = ref(false);
+    const BC_PER_PAGE = 25;
+    const CASL_FOOTER = '— Alevtyna · Shuhai Art Studio\n1324 11 Ave SW #202, Calgary · a.art.shuhai@gmail.com\n\nYou are receiving this because you took a class or subscribed at art-shuhai.com. Reply "unsubscribe" to stop.';
+    const bcSubject = ref('New painting workshops at Shuhai Art Studio');
+    const bcBody = ref('Hi {name},\n\nIt’s Alevtyna from Shuhai Art Studio. I’d love to see you back at the easel — we have new beginner-friendly painting workshops coming up in Calgary, all materials included.\n\nSee the schedule and reserve your spot: https://art-shuhai.com/#events\n\nHope to paint with you soon!');
     // After a fresh upload the file is committed to GitHub but not yet served by Railway
     // (autodeploy takes a few minutes). Keep a local data-URL preview keyed by the canonical
     // path so the card thumbnail shows the new image immediately instead of a broken icon.
@@ -672,6 +753,8 @@ createApp({
       gallery: 'Gallery',
       text: 'Site text',
       orders: 'Payments',
+      clients: 'Clients',
+      broadcast: 'Broadcast',
     }[tab.value]));
 
     const currentList = computed(() =>
@@ -680,7 +763,7 @@ createApp({
     );
 
     const statusText = computed(() => {
-      if (tab.value === 'orders' || tab.value === 'clients') return '';
+      if (tab.value === 'orders' || tab.value === 'clients' || tab.value === 'broadcast') return '';
       if (saving.value) return 'Saving…';
       if (status.value.type === 'error') return status.value.msg;
       if (status.value.type === 'saved') return 'Saved and published. Your changes will appear on the site in 3–4 minutes.';
@@ -910,9 +993,71 @@ createApp({
 
     watch([clientSearch, clientFilter], () => { clientPage.value = 1; });
 
+    // ---- broadcast (draft mode, read-only audience) ----
+    async function loadAudience() {
+      audienceLoading.value = true;
+      audienceError.value = '';
+      try {
+        audienceData.value = await api('GET', '/cms/audience');
+      } catch (e) {
+        audienceError.value = e.message;
+      } finally {
+        audienceLoading.value = false;
+      }
+    }
+
+    const filteredRecipients = computed(() => {
+      const d = audienceData.value;
+      if (!d) return [];
+      let list = d.recipients;
+      if (bcFilter.value === 'subscriber') list = list.filter(r => r.source === 'subscriber' || r.source === 'both');
+      else if (bcFilter.value === 'client') list = list.filter(r => r.source === 'client' || r.source === 'both');
+      return list;
+    });
+    const bcPages = computed(() => Math.max(1, Math.ceil(filteredRecipients.value.length / BC_PER_PAGE)));
+    const pagedRecipients = computed(() => {
+      const start = (bcPage.value - 1) * BC_PER_PAGE;
+      return filteredRecipients.value.slice(start, start + BC_PER_PAGE);
+    });
+    watch(bcFilter, () => { bcPage.value = 1; });
+
+    const previewName = computed(() => {
+      const r = filteredRecipients.value[0];
+      const n = (r && r.name) ? String(r.name).trim().split(/\s+/)[0] : '';
+      return n || 'there';
+    });
+    const previewBody = computed(() => (bcBody.value + '\n\n' + CASL_FOOTER).replace(/\{name\}/g, previewName.value));
+
+    function csvCell(s) {
+      s = String(s == null ? '' : s);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function downloadRecipientsCsv() {
+      const rows = [['name', 'email', 'source', 'last'], ...filteredRecipients.value.map(r => [r.name, r.email, r.source, r.last])];
+      const csv = rows.map(r => r.map(csvCell).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'shuhai-broadcast-recipients.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    async function copyEmail() {
+      const text = 'Subject: ' + bcSubject.value + '\n\n' + bcBody.value + '\n\n' + CASL_FOOTER;
+      try {
+        await navigator.clipboard.writeText(text);
+        copied.value = true;
+        setTimeout(() => { copied.value = false; }, 1500);
+      } catch (e) {
+        showToast('Copy failed — select and copy manually', 'error', 4000);
+      }
+    }
+
     watch(tab, (v) => {
       if (v === 'orders' && !ordersData.value && !ordersLoading.value) loadOrders();
       if (v === 'clients' && !clientsData.value && !clientsLoading.value) loadClients();
+      if (v === 'broadcast' && !audienceData.value && !audienceLoading.value) loadAudience();
     });
 
     // ---- auth ----
@@ -1121,6 +1266,10 @@ createApp({
       clientsData, clientsLoading, clientsError, clientSearch, loadClients, filteredClients, fmtMoney,
       clientFilter, clientPage, pagedClients, clientPages, setOffline,
       getOfflineForm, addOffline, removeOffline,
+      audienceData, audienceLoading, audienceError, loadAudience,
+      bcSubject, bcBody, bcFilter, bcPage, copied,
+      filteredRecipients, bcPages, pagedRecipients, previewName, previewBody,
+      downloadRecipientsCsv, copyEmail,
     };
   }
 }).mount('#app');
