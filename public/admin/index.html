@@ -112,6 +112,23 @@
   .ord-flag{background:#fdf3e7;border:1px solid #f5dca1;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;line-height:1.5;}
   .ord-dup{color:#b8770f;font-weight:600;}
   .ord-grouphead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+  .ord-table td.num, .ord-table th.num{text-align:right;white-space:nowrap;}
+  /* segmented toggle */
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;margin:6px 0 16px;}
+  .seg button{background:#fff;border:none;padding:8px 18px;font-size:13px;color:var(--ink);}
+  .seg button.active{background:var(--peach);font-weight:600;}
+  .seat-row{cursor:pointer;}
+  .seat-row:hover{background:#fff8f1;}
+  .seat-detail td{background:#fffaf4;}
+  /* clients stats */
+  .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:8px;}
+  @media (max-width:760px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+  .stat-n{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;line-height:1;}
+  .stat-l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.55;margin-top:6px;}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .cl-search{width:100%;max-width:360px;font:inherit;border:1px solid var(--border);border-radius:10px;padding:9px 12px;background:#fff;margin-bottom:12px;}
+  .cl-search:focus{outline:none;border-color:var(--peach-deep);box-shadow:0 0 0 3px rgba(255,167,105,.18);}
 </style>
 </head>
 <body>
@@ -145,6 +162,7 @@
       <button :class="{active:tab==='gallery'}" @click="tab='gallery'">Gallery</button>
       <button :class="{active:tab==='text'}" @click="tab='text'">Site text</button>
       <button :class="{active:tab==='orders'}" @click="tab='orders'">Payments</button>
+      <button :class="{active:tab==='clients'}" @click="tab='clients'">Clients</button>
     </nav>
     <div class="footer">
       <button @click="reload">Reload from GitHub</button>
@@ -158,13 +176,17 @@
         <h1 style="font-size:30px;">{{ tabTitle }}</h1>
         <div class="status" :class="statusClass">{{ statusText }}</div>
       </div>
-      <button v-if="tab!=='orders'" class="btn btn-peach" @click="save" :disabled="!dirty || saving">
-        <span v-if="saving" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
-        <span v-else>Save & publish</span>
-      </button>
-      <button v-else class="btn btn-outline" @click="loadOrders" :disabled="ordersLoading">
+      <button v-if="tab==='orders'" class="btn btn-outline" @click="loadOrders" :disabled="ordersLoading">
         <span v-if="ordersLoading" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
         <span v-else>Refresh</span>
+      </button>
+      <button v-else-if="tab==='clients'" class="btn btn-outline" @click="loadClients" :disabled="clientsLoading">
+        <span v-if="clientsLoading" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
+        <span v-else>Refresh</span>
+      </button>
+      <button v-else class="btn btn-peach" @click="save" :disabled="!dirty || saving">
+        <span v-if="saving" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
+        <span v-else>Save & publish</span>
       </button>
     </div>
 
@@ -403,74 +425,121 @@
           Stripe reconciliation unavailable ({{ ordersData.stripe_error }}). Showing recorded orders only.
         </div>
 
-        <h3 style="font-size:18px;margin:8px 0 4px;">Current events</h3>
-        <div v-if="ordersView.current.length===0" class="empty">No current events.</div>
+        <!-- Upcoming / Past toggle -->
+        <div class="seg">
+          <button :class="{active:bookingsView==='upcoming'}" @click="bookingsView='upcoming'">Upcoming ({{ bookingRows.upcoming.length }})</button>
+          <button :class="{active:bookingsView==='past'}" @click="bookingsView='past'">Past ({{ bookingRows.past.length }})</button>
+        </div>
 
-        <div v-for="g in ordersView.current" :key="'c'+g.event_id+'|'+g.event_name" class="card">
-          <div class="ord-grouphead">
-            <div>
-              <h3 style="font-size:20px;">{{ g.event_name }}</h3>
-              <div style="font-size:12px;opacity:.6;">slot id={{ g.event_id }}<span v-if="g.event_date"> · {{ g.event_date }}</span></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <span class="ord-badge" :class="g.mismatch ? 'ord-warn' : 'ord-ok'">
-                paid {{ g.db_count }}<template v-if="g.stripe_count!==null"> · Stripe {{ g.stripe_count }}</template>
-                <template v-if="g.mismatch"> ⚠</template>
-              </span>
-              <span class="ord-badge ord-spots">{{ spotsLeft(g) }} spots left on site</span>
-              <span v-if="g.waitlist>0" class="ord-badge ord-soft">waitlist {{ g.waitlist }}</span>
-            </div>
-          </div>
+        <div v-if="activeBookingRows.length===0" class="empty">Nothing here yet.</div>
+        <table v-else class="ord-table seats-table">
+          <thead>
+            <tr>
+              <th style="width:24px;"></th>
+              <th>Class</th>
+              <th class="num">Seats</th>
+              <th class="num">Paid (Stripe)</th>
+              <th class="num">Paid (offline)</th>
+              <th class="num">Spots left</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="r in activeBookingRows" :key="r.id+'|'+r.name">
+              <tr class="seat-row" @click="toggleRow(r.id)">
+                <td>{{ expanded[r.id] ? '▾' : '▸' }}</td>
+                <td>
+                  <strong>{{ r.name }}</strong>
+                  <div style="font-size:12px;opacity:.6;">{{ r.date && r.date!=='%' ? r.date : 'recurring' }}</div>
+                  <div v-if="r.left !== r.siteLeft" class="ord-dup" style="font-size:12px;margin-top:3px;">
+                    ⚠ site shows {{ r.siteLeft }} left<span v-if="r.stripe_only.length"> — lost order: {{ r.stripe_only.join(', ') }}</span><span v-else> — stray record on this id</span>
+                  </div>
+                </td>
+                <td class="num">{{ r.cap }}</td>
+                <td class="num">{{ r.stripe }}</td>
+                <td class="num">{{ r.offline }}</td>
+                <td class="num"><span class="ord-badge" :class="r.left<=3 ? 'ord-warn' : 'ord-spots'">{{ r.left }}</span></td>
+              </tr>
+              <tr v-if="expanded[r.id]" class="seat-detail">
+                <td></td>
+                <td colspan="5">
+                  <table v-if="r.orders.length" class="ord-table" style="margin:4px 0;">
+                    <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th class="num">Amount</th></tr></thead>
+                    <tbody>
+                      <tr v-for="(o,i) in r.orders" :key="i">
+                        <td>{{ o.date || '—' }}</td>
+                        <td>{{ o.name || '—' }}</td>
+                        <td :class="{'ord-dup': dupEmail(r.orders, o.email)}">{{ o.email || '—' }}<span v-if="dupEmail(r.orders, o.email)" title="Paid more than once — verify it is not a double charge"> ⓘ</span></td>
+                        <td>{{ o.phone || '—' }}</td>
+                        <td class="num">{{ o.amount!=null ? '$'+o.amount : '—' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div v-else style="opacity:.6;font-size:13px;padding:6px 8px;">No paid orders yet.</div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <p class="desc" style="margin-top:8px;">“Spots left” uses real Stripe payments. A ⚠ means the public site currently shows a different number (a lost order, or a stray record sharing the same id).</p>
 
-          <div v-if="g.site_count !== g.db_count" class="ord-flag">
-            ⚠ The public site shows <strong>{{ Math.max(0, ordersData.max - g.site_count) }}</strong> spots left here — it counts
-            <strong>{{ g.site_count }}</strong> seats taken for slot id={{ g.event_id }}, but only <strong>{{ g.db_count }}</strong>
-            belong to this class. Other records share this id (see “Stray records” below).
-          </div>
-          <div v-if="g.stripe_only.length" class="ord-flag">
-            ⚠ Paid in Stripe but <strong>not recorded here</strong> — a lost order, so the site shows too many free spots:
-            <strong>{{ g.stripe_only.join(', ') }}</strong>
-          </div>
-          <div v-if="g.db_only.length" class="ord-flag">
-            ⚠ Recorded here but <strong>no matching Stripe payment</strong> (manual / test?): <strong>{{ g.db_only.join(', ') }}</strong>
-          </div>
-
-          <table v-if="g.orders.length" class="ord-table">
-            <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Phone</th><th>Amount</th></tr></thead>
+        <!-- Stray / test records in DB -->
+        <template v-if="ordersView.stray.length">
+          <h3 style="font-size:16px;margin:24px 0 4px;">⚠ Stray records in the database</h3>
+          <p class="desc" style="margin-bottom:10px;">Rows that don’t match a current event — test rows or old classes on a reused slot id. They inflate the public counter for that id.</p>
+          <table class="ord-table">
+            <thead><tr><th>Class</th><th class="num">Slot id</th><th class="num">In DB</th><th>Note</th></tr></thead>
             <tbody>
-              <tr v-for="(o,i) in g.orders" :key="i">
-                <td>{{ o.date || '—' }}</td>
-                <td>{{ o.name || '—' }}</td>
-                <td :class="{'ord-dup': dupEmail(g.orders, o.email)}">{{ o.email || '—' }}<span v-if="dupEmail(g.orders, o.email)" title="Paid more than once — verify it is not a double charge"> ⓘ</span></td>
-                <td>{{ o.phone || '—' }}</td>
-                <td>{{ o.amount!=null ? '$'+o.amount : '—' }}</td>
+              <tr v-for="g in ordersView.stray" :key="'s'+g.event_id+g.event_name">
+                <td>{{ g.event_name }}</td>
+                <td class="num">{{ g.event_id }}</td>
+                <td class="num">{{ g.db_count }}</td>
+                <td style="font-size:12px;">{{ g.db_only.length ? ('no Stripe match: ' + g.db_only.join(', ')) : 'past class' }}</td>
               </tr>
             </tbody>
           </table>
-          <div v-else class="empty" style="padding:16px;margin-top:10px;">No paid orders yet.</div>
+        </template>
+      </template>
+    </template>
+
+    <!-- CLIENTS -->
+    <template v-if="tab==='clients'">
+      <p class="desc" style="margin-top:-14px;">Your customer base, built from Stripe payment history. Read-only.</p>
+
+      <div v-if="clientsLoading && !clientsData" class="empty">
+        <span class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span> Loading clients…
+      </div>
+      <div v-else-if="clientsError" class="empty" style="color:#b53030;">{{ clientsError }}</div>
+
+      <template v-else-if="clientsData">
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-n">{{ clientsData.summary.total_clients }}</div><div class="stat-l">Clients</div></div>
+          <div class="stat"><div class="stat-n">{{ clientsData.summary.repeat_clients }}</div><div class="stat-l">Repeat</div></div>
+          <div class="stat"><div class="stat-n">${{ fmtMoney(clientsData.summary.total_revenue) }}</div><div class="stat-l">Revenue</div></div>
+          <div class="stat"><div class="stat-n">{{ clientsData.summary.total_orders }}</div><div class="stat-l">Paid orders</div></div>
+          <div class="stat"><div class="stat-n">{{ clientsData.summary.new_this_month }}</div><div class="stat-l">New this month</div></div>
         </div>
 
-        <template v-if="ordersView.stray.length">
-          <h3 style="font-size:18px;margin:26px 0 4px;">Stray / past paid records still in the database</h3>
-          <p class="desc" style="margin-bottom:10px;">These don’t match a current event — old classes, or test rows reusing a slot id. They still inflate the public counter for their id, so they’re worth cleaning up.</p>
-          <div v-for="g in ordersView.stray" :key="'s'+g.event_id+'|'+g.event_name" class="card" style="background:#fcfaf7;">
-            <div class="ord-grouphead">
-              <div><strong>{{ g.event_name }}</strong> <span style="font-size:12px;opacity:.6;">slot id={{ g.event_id }}</span></div>
-              <span class="ord-badge" :class="g.mismatch ? 'ord-warn' : 'ord-soft'">paid {{ g.db_count }}<template v-if="g.stripe_count!==null"> · Stripe {{ g.stripe_count }}</template></span>
-            </div>
-            <div v-if="g.db_only.length" class="ord-flag">⚠ No Stripe match (likely test / manual): <strong>{{ g.db_only.join(', ') }}</strong></div>
-            <table v-if="g.orders.length" class="ord-table">
-              <tbody>
-                <tr v-for="(o,i) in g.orders" :key="i">
-                  <td>{{ o.date || '—' }}</td>
-                  <td>{{ o.name || '—' }}</td>
-                  <td>{{ o.email || '—' }}</td>
-                  <td>{{ o.amount!=null ? '$'+o.amount : '—' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </template>
+        <h3 style="font-size:16px;margin:22px 0 8px;">Top classes</h3>
+        <div class="chips">
+          <span v-for="c in clientsData.top_classes" :key="c.name" class="ord-badge ord-soft">{{ c.name }} · {{ c.count }}</span>
+        </div>
+
+        <h3 style="font-size:16px;margin:24px 0 8px;">Clients ({{ filteredClients.length }})</h3>
+        <input class="cl-search" v-model="clientSearch" placeholder="Search name or email…">
+        <table class="ord-table">
+          <thead><tr><th>Name</th><th>Email</th><th class="num">Classes</th><th class="num">Spent</th><th>First</th><th>Last</th></tr></thead>
+          <tbody>
+            <tr v-for="c in filteredClients" :key="c.email">
+              <td>{{ c.name || '—' }}<span v-if="c.orders>1" class="ord-badge ord-soft" style="margin-left:6px;">×{{ c.orders }}</span></td>
+              <td>{{ c.email }}</td>
+              <td class="num">{{ c.classes_count }}</td>
+              <td class="num">${{ fmtMoney(c.spent) }}</td>
+              <td style="font-size:12px;white-space:nowrap;">{{ c.first || '—' }}</td>
+              <td style="font-size:12px;white-space:nowrap;">{{ c.last || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-if="filteredClients.length===0" class="empty" style="margin-top:10px;">No clients match.</p>
       </template>
     </template>
 
@@ -535,6 +604,13 @@ createApp({
     const ordersData = ref(null);
     const ordersLoading = ref(false);
     const ordersError = ref('');
+    const bookingsView = ref('upcoming');
+    const expanded = reactive({});
+    // Clients tab (read-only, lazy-loaded)
+    const clientsData = ref(null);
+    const clientsLoading = ref(false);
+    const clientsError = ref('');
+    const clientSearch = ref('');
     // After a fresh upload the file is committed to GitHub but not yet served by Railway
     // (autodeploy takes a few minutes). Keep a local data-URL preview keyed by the canonical
     // path so the card thumbnail shows the new image immediately instead of a broken icon.
@@ -559,7 +635,7 @@ createApp({
     );
 
     const statusText = computed(() => {
-      if (tab.value === 'orders') return '';
+      if (tab.value === 'orders' || tab.value === 'clients') return '';
       if (saving.value) return 'Saving…';
       if (status.value.type === 'error') return status.value.msg;
       if (status.value.type === 'saved') return 'Saved and published. Your changes will appear on the site in 3–4 minutes.';
@@ -655,8 +731,86 @@ createApp({
       return { current, stray };
     });
 
+    function toggleRow(id) { expanded[id] = !expanded[id]; }
+
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    // Seats table rows: join each dated event with its reconciled Stripe group and the
+    // capacity / offline fields from content. "Spots left" uses real Stripe payments;
+    // siteLeft is what the public badge currently shows (so we can flag drift).
+    const bookingRows = computed(() => {
+      const data = ordersData.value;
+      const events = content.value?.events || [];
+      if (!data || !events.length) return { upcoming: [], past: [] };
+      const SEP = '\u0000';
+      const keyOf = (id, name) => String(id) + SEP + String(name);
+      const gmap = new Map((data.groups || []).map(g => [keyOf(g.event_id, g.event_name), g]));
+      const today = todayStr();
+      const rows = events.map(ev => {
+        const g = gmap.get(keyOf(ev.id, ev.eventName)) || null;
+        const cap = Number(ev.maxAttendees) > 0 ? Number(ev.maxAttendees) : (data.max || 12);
+        const offline = Number(ev.bookedOffline) > 0 ? Number(ev.bookedOffline) : 0;
+        const stripe = g ? (g.stripe_count != null ? g.stripe_count : g.db_count) : 0;
+        const siteCount = g ? g.site_count : ((data.site_paid_by_id && data.site_paid_by_id[String(ev.id)]) || 0);
+        return {
+          id: ev.id,
+          name: ev.eventName,
+          date: ev.date,
+          cap,
+          stripe,
+          offline,
+          left: Math.max(0, cap - stripe - offline),
+          siteLeft: Math.max(0, cap - siteCount - offline),
+          stripe_only: g ? g.stripe_only : [],
+          orders: g ? g.orders : [],
+          isPast: ev.date && ev.date !== '%' && ev.date < today,
+        };
+      });
+      return {
+        upcoming: rows.filter(r => !r.isPast),
+        past: rows.filter(r => r.isPast),
+      };
+    });
+
+    const activeBookingRows = computed(() =>
+      bookingsView.value === 'past' ? bookingRows.value.past : bookingRows.value.upcoming
+    );
+
+    // ---- clients (read-only) ----
+    async function loadClients() {
+      clientsLoading.value = true;
+      clientsError.value = '';
+      try {
+        clientsData.value = await api('GET', '/cms/clients');
+      } catch (e) {
+        clientsError.value = e.message;
+      } finally {
+        clientsLoading.value = false;
+      }
+    }
+
+    function fmtMoney(n) {
+      const v = Number(n) || 0;
+      return v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    const filteredClients = computed(() => {
+      const data = clientsData.value;
+      if (!data) return [];
+      const q = clientSearch.value.trim().toLowerCase();
+      if (!q) return data.clients;
+      return data.clients.filter(c =>
+        String(c.name || '').toLowerCase().includes(q) ||
+        String(c.email || '').toLowerCase().includes(q)
+      );
+    });
+
     watch(tab, (v) => {
       if (v === 'orders' && !ordersData.value && !ordersLoading.value) loadOrders();
+      if (v === 'clients' && !clientsData.value && !clientsLoading.value) loadClients();
     });
 
     // ---- auth ----
@@ -861,6 +1015,8 @@ createApp({
       addFaq, removeFaq,
       toast,
       ordersData, ordersLoading, ordersError, ordersView, loadOrders, fmtTime, dupEmail, spotsLeft,
+      bookingsView, bookingRows, activeBookingRows, expanded, toggleRow,
+      clientsData, clientsLoading, clientsError, clientSearch, loadClients, filteredClients, fmtMoney,
     };
   }
 }).mount('#app');
