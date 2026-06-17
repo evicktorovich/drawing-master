@@ -16,5 +16,7 @@ class VerifyCsrfToken extends Middleware
         'cms/logout',
         'cms/save',
         'cms/upload',
+        'cms/broadcast/send',
+        'unsubscribe',
     ];
 }

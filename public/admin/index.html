@@ -627,6 +627,20 @@
           </div>
         </div>
 
+        <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:18px;">
+          <h3 style="font-size:16px;margin:0 0 4px;">Send</h3>
+          <p class="desc" style="margin:0 0 12px;">Free tier sends up to 100/day. Always send a test to yourself first.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <input class="off-add" style="min-width:240px;" v-model="bcTestEmail" placeholder="your@email.com (test)">
+            <button class="btn btn-outline" @click="sendTest" :disabled="!!bcSending || !bcTestEmail">{{ bcSending==='test' ? 'Sending…' : 'Send test' }}</button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-peach" @click="sendBatch" :disabled="!!bcSending || filteredRecipients.length===0">{{ bcSending==='bulk' ? 'Sending…' : 'Send next batch (up to 100)' }}</button>
+            <span v-if="bcResult" :style="{color: bcResult.error ? '#b53030' : '#2e6b32', fontSize:'13px', fontWeight:'600'}">{{ bcResult.msg }}</span>
+          </div>
+          <p class="desc" style="margin-top:10px;">Recipients come from the segment below ({{ filteredRecipients.length }}). Already-emailed and unsubscribed people are skipped automatically — run this once a day until everyone's reached.</p>
+        </div>
+
         <h3 style="font-size:16px;margin:24px 0 8px;">Recipients ({{ filteredRecipients.length }})</h3>
         <div class="seg" style="margin:0 0 12px;">
           <button :class="{active:bcFilter==='all'}" @click="bcFilter='all'">All</button>
@@ -733,6 +747,9 @@ createApp({
     const bcFilter = ref('all');
     const bcPage = ref(1);
     const copied = ref(false);
+    const bcTestEmail = ref('');
+    const bcSending = ref(''); // '' | 'test' | 'bulk'
+    const bcResult = ref(null); // { error:bool, msg }
     const BC_PER_PAGE = 25;
     const CASL_FOOTER = '— Alevtyna · Shuhai Art Studio\n1324 11 Ave SW #202, Calgary · a.art.shuhai@gmail.com\n\nYou are receiving this because you took a class or subscribed at art-shuhai.com. Reply "unsubscribe" to stop.';
     const bcSubject = ref('New painting workshops at Shuhai Art Studio');
@@ -1089,6 +1106,43 @@ createApp({
       }
     }
 
+    async function sendTest() {
+      if (!bcTestEmail.value.trim()) return;
+      bcSending.value = 'test';
+      bcResult.value = null;
+      try {
+        const r = await api('POST', '/cms/broadcast/send', { json: {
+          mode: 'test', subject: bcSubject.value, body: bcBody.value, test_email: bcTestEmail.value.trim(),
+        }});
+        bcResult.value = { error: false, msg: `Test sent to ${bcTestEmail.value.trim()} — check it (incl. the unsubscribe link).` };
+      } catch (e) {
+        bcResult.value = { error: true, msg: e.message };
+      } finally {
+        bcSending.value = '';
+      }
+    }
+
+    async function sendBatch() {
+      const n = Math.min(100, filteredRecipients.value.length);
+      if (!confirm(`Send a real email now to up to ${n} people in this segment? (Already-emailed and unsubscribed are skipped.)`)) return;
+      bcSending.value = 'bulk';
+      bcResult.value = null;
+      try {
+        const recipients = filteredRecipients.value.map(r => ({ email: r.email, name: r.name }));
+        const r = await api('POST', '/cms/broadcast/send', { json: {
+          mode: 'bulk', subject: bcSubject.value, body: bcBody.value, recipients, limit: 100,
+        }});
+        const sent = r.sent || 0, remaining = r.remaining || 0;
+        bcResult.value = { error: false, msg: sent > 0
+          ? `Sent to ${sent}. ${remaining} left — come back tomorrow (free tier = 100/day) to send the rest.`
+          : (r.message || 'Nobody left to send to.') };
+      } catch (e) {
+        bcResult.value = { error: true, msg: e.message };
+      } finally {
+        bcSending.value = '';
+      }
+    }
+
     watch(tab, (v) => {
       if (v === 'orders' && !ordersData.value && !ordersLoading.value) loadOrders();
       if (v === 'clients' && !clientsData.value && !clientsLoading.value) loadClients();
@@ -1305,6 +1359,7 @@ createApp({
       bcSubject, bcBody, bcFilter, bcPage, copied,
       filteredRecipients, bcPages, pagedRecipients, previewName, previewBody,
       downloadRecipientsCsv, copyEmail,
+      bcTestEmail, bcSending, bcResult, sendTest, sendBatch,
     };
   }
 }).mount('#app');

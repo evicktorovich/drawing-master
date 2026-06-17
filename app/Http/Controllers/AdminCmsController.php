@@ -417,6 +417,15 @@ class AdminCmsController extends Controller
                 Log::warning('AdminCms audience subscriber read failed', ['err' => $e->getMessage()]);
             }
 
+            // Suppress anyone who unsubscribed (table created out-of-band; absent → skip).
+            try {
+                foreach (\Illuminate\Support\Facades\DB::table('broadcast_unsubscribes')->pluck('email') as $u) {
+                    $exclude[strtolower(trim((string) $u))] = true;
+                }
+            } catch (\Throwable $e) {
+                // suppression table not present yet — no-op
+            }
+
             $recipients = [];
             foreach ($byEmail as $email => $r) {
                 if (isset($exclude[$email])) {
@@ -448,6 +457,169 @@ class AdminCmsController extends Controller
             Log::error('AdminCms audience failed', ['err' => $e->getMessage()]);
             return response()->json(['error' => 'Audience load failed: ' . substr($e->getMessage(), 0, 200)], 502);
         }
+    }
+
+    /**
+     * Send the broadcast via Resend (free-tier friendly). `test` mode emails one
+     * address; `bulk` sends up to `limit` (<=100) of the recipients passed from the
+     * audience view, skipping unsubscribed + already-sent-this-campaign. No send here
+     * touches anyone twice (recorded in broadcast_sent).
+     */
+    public function sendBroadcast(Request $request)
+    {
+        if (!$request->session()->get('cms_admin')) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+        $apiKey  = env('RESEND_API_KEY');
+        $from    = env('BROADCAST_FROM');
+        $replyTo = env('BROADCAST_REPLY_TO');
+        if (!$apiKey || !$from) {
+            return response()->json(['error' => 'Sending not configured (set RESEND_API_KEY and BROADCAST_FROM in env).'], 400);
+        }
+
+        $subject = trim((string) $request->input('subject', ''));
+        $body    = (string) $request->input('body', '');
+        if ($subject === '' || trim($body) === '') {
+            return response()->json(['error' => 'Subject and body are required.'], 422);
+        }
+        $mode     = (string) $request->input('mode', 'test');
+        $campaign = substr(md5($subject), 0, 24);
+
+        $send = function (array $payload, string $path) use ($apiKey) {
+            return Http::withToken($apiKey)->asJson()->timeout(30)
+                ->post('https://api.resend.com/' . $path, $payload);
+        };
+        $headers = fn (string $email) => [
+            'List-Unsubscribe'      => '<' . $this->unsubUrl($email) . '>',
+            'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
+        ];
+
+        // ---- TEST ----
+        if ($mode === 'test') {
+            $to = strtolower(trim((string) $request->input('test_email', '')));
+            if ($to === '' || !str_contains($to, '@')) {
+                return response()->json(['error' => 'Enter a valid test email.'], 422);
+            }
+            $resp = $send([
+                'from' => $from, 'to' => [$to], 'reply_to' => $replyTo ?: null,
+                'subject' => '[TEST] ' . $subject,
+                'html' => $this->renderEmailHtml($body, 'there', $to),
+                'headers' => $headers($to),
+            ], 'emails');
+            if (!$resp->successful()) {
+                return response()->json(['error' => 'Resend: ' . ($resp->json('message') ?: ('HTTP ' . $resp->status()))], 502);
+            }
+            return response()->json(['ok' => true, 'sent' => 1, 'id' => $resp->json('id')]);
+        }
+
+        // ---- BULK ----
+        $incoming = $request->input('recipients', []);
+        if (!is_array($incoming)) {
+            $incoming = [];
+        }
+        $limit = min(100, max(1, (int) $request->input('limit', 100)));
+
+        $unsub = [];
+        $already = [];
+        try {
+            foreach (\Illuminate\Support\Facades\DB::table('broadcast_unsubscribes')->pluck('email') as $u) {
+                $unsub[strtolower(trim((string) $u))] = true;
+            }
+        } catch (\Throwable $e) {
+        }
+        try {
+            foreach (\Illuminate\Support\Facades\DB::table('broadcast_sent')->where('campaign', $campaign)->pluck('email') as $u) {
+                $already[strtolower(trim((string) $u))] = true;
+            }
+        } catch (\Throwable $e) {
+        }
+
+        $batch = [];
+        $picked = [];
+        $eligible = 0;
+        foreach ($incoming as $r) {
+            $email = strtolower(trim((string) ($r['email'] ?? '')));
+            if ($email === '' || !str_contains($email, '@') || isset($unsub[$email]) || isset($already[$email]) || isset($picked[$email])) {
+                continue;
+            }
+            $eligible++;
+            if (count($batch) >= $limit) {
+                continue; // count remaining but don't add
+            }
+            $picked[$email] = true;
+            $nm = trim((string) ($r['name'] ?? ''));
+            $first = $nm !== '' ? preg_split('/\s+/', $nm)[0] : 'there';
+            $batch[] = [
+                'from' => $from, 'to' => [(string) $r['email']], 'reply_to' => $replyTo ?: null,
+                'subject' => $subject,
+                'html' => $this->renderEmailHtml($body, $first, $email),
+                'headers' => $headers($email),
+            ];
+        }
+
+        if (empty($batch)) {
+            return response()->json(['ok' => true, 'sent' => 0, 'remaining' => 0, 'message' => 'Nobody left to send to (all already sent or unsubscribed).']);
+        }
+
+        $resp = $send($batch, 'emails/batch');
+        if (!$resp->successful()) {
+            return response()->json(['error' => 'Resend: ' . ($resp->json('message') ?: ('HTTP ' . $resp->status()))], 502);
+        }
+
+        try {
+            $rows = array_map(fn ($e) => ['campaign' => $campaign, 'email' => $e, 'sent_at' => now()], array_keys($picked));
+            \Illuminate\Support\Facades\DB::table('broadcast_sent')->insertOrIgnore($rows);
+        } catch (\Throwable $e) {
+            Log::warning('broadcast_sent insert failed', ['err' => $e->getMessage()]);
+        }
+
+        return response()->json(['ok' => true, 'sent' => count($batch), 'remaining' => max(0, $eligible - count($batch))]);
+    }
+
+    /** Public unsubscribe landing — records the email in the suppression list. */
+    public function unsubscribe(Request $request)
+    {
+        $email = strtolower(trim((string) $request->query('e', '')));
+        $token = (string) $request->query('t', '');
+        $ok = false;
+        if ($email !== '' && str_contains($email, '@') && hash_equals($this->unsubToken($email), $token)) {
+            try {
+                \Illuminate\Support\Facades\DB::table('broadcast_unsubscribes')->insertOrIgnore(['email' => $email, 'created_at' => now()]);
+                $ok = true;
+            } catch (\Throwable $e) {
+                Log::error('unsubscribe insert failed', ['err' => $e->getMessage()]);
+            }
+        }
+        $msg = $ok
+            ? 'You have been unsubscribed and will no longer receive emails from Shuhai Art Studio.'
+            : 'This unsubscribe link is invalid or expired. Email a.art.shuhai@gmail.com to be removed.';
+        $html = '<!doctype html><meta charset="utf-8"><title>Unsubscribe</title>'
+            . '<div style="font-family:system-ui,-apple-system,sans-serif;max-width:520px;margin:80px auto;padding:0 20px;text-align:center;">'
+            . '<h2 style="font-weight:600;font-family:Georgia,serif;">Shuhai Art Studio</h2>'
+            . '<p style="font-size:16px;line-height:1.55;color:#333;">' . htmlspecialchars($msg) . '</p></div>';
+        return response($html, $ok ? 200 : 400)->header('Content-Type', 'text/html; charset=utf-8');
+    }
+
+    private function unsubToken(string $email): string
+    {
+        return substr(hash_hmac('sha256', strtolower(trim($email)), (string) config('app.key')), 0, 32);
+    }
+    private function unsubUrl(string $email): string
+    {
+        $base = rtrim((string) (config('app.frontend_url') ?: config('app.url') ?: 'https://art-shuhai.com'), '/');
+        return $base . '/unsubscribe?e=' . urlencode($email) . '&t=' . $this->unsubToken($email);
+    }
+    private function renderEmailHtml(string $body, string $firstName, string $email): string
+    {
+        $text   = str_replace('{name}', $firstName, $body);
+        $escaped = nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
+        $unsub  = htmlspecialchars($this->unsubUrl($email), ENT_QUOTES, 'UTF-8');
+        $footer = '<hr style="border:none;border-top:1px solid #eee;margin:28px 0 16px;">'
+            . '<p style="font-size:12px;color:#999;line-height:1.5;">Shuhai Art Studio &middot; 1324 11 Ave SW #202, Calgary &middot; a.art.shuhai@gmail.com<br>'
+            . 'You are receiving this because you took a class or subscribed at art-shuhai.com. '
+            . '<a href="' . $unsub . '" style="color:#999;">Unsubscribe</a>.</p>';
+        return '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:560px;margin:0 auto;">'
+            . '<p>' . $escaped . '</p>' . $footer . '</div>';
     }
 
     /** All paid Stripe Checkout sessions (minus refunds and $0 tests), cached 10 min. */
