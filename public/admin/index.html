@@ -591,7 +591,7 @@
 
     <!-- BROADCAST (draft mode — no email is sent) -->
     <template v-if="tab==='broadcast'">
-      <p class="desc" style="margin-top:-14px;">Re-engagement email to subscribers + past clients <strong>not</strong> booked on an upcoming class. <strong>Draft mode — nothing is sent.</strong> Export the list and copy the email; sending hooks up later.</p>
+      <p class="desc" style="margin-top:-14px;">Re-engagement email to subscribers + past clients <strong>not</strong> booked on an upcoming class. Free tier sends up to <strong>100/day</strong> — send a test to yourself first, then “Send next batch” in the Send box below. Already-emailed &amp; unsubscribed people are skipped, so run it daily until everyone's reached.</p>
 
       <div v-if="audienceLoading && !audienceData" class="empty">
         <span class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span> Building audience…
@@ -751,7 +751,7 @@ createApp({
     const bcSending = ref(''); // '' | 'test' | 'bulk'
     const bcResult = ref(null); // { error:bool, msg }
     const BC_PER_PAGE = 25;
-    const CASL_FOOTER = '— Alevtyna · Shuhai Art Studio\n1324 11 Ave SW #202, Calgary · a.art.shuhai@gmail.com\n\nYou are receiving this because you took a class or subscribed at art-shuhai.com. Reply "unsubscribe" to stop.';
+    const CASL_FOOTER = '— Alevtyna, Shuhai Art Studio\n\n1324 11 Ave SW #202, Calgary · a.art.shuhai@gmail.com\nYou are receiving this because you took a class or subscribed at art-shuhai.com. Unsubscribe (one-click link in the email).';
     const bcSubject = ref('New painting workshops at Shuhai Art Studio');
     const bcBody = ref('Hi {name},\n\nIt’s Alevtyna from Shuhai Art Studio. I’d love to see you back at the easel — we have new beginner-friendly painting workshops coming up in Calgary, all materials included.\n\nSee the schedule and reserve your spot: https://art-shuhai.com/#events\n\nHope to paint with you soon!');
     // After a fresh upload the file is committed to GitHub but not yet served by Railway
