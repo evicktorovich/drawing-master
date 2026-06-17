@@ -614,12 +614,13 @@ class AdminCmsController extends Controller
         $text   = str_replace('{name}', $firstName, $body);
         $escaped = nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
         $unsub  = htmlspecialchars($this->unsubUrl($email), ENT_QUOTES, 'UTF-8');
-        $footer = '<hr style="border:none;border-top:1px solid #eee;margin:28px 0 16px;">'
-            . '<p style="font-size:12px;color:#999;line-height:1.5;">Shuhai Art Studio &middot; 1324 11 Ave SW #202, Calgary &middot; a.art.shuhai@gmail.com<br>'
+        $signoff = '<p style="margin-top:18px;">&mdash; Alevtyna, Shuhai Art Studio</p>';
+        $footer = '<hr style="border:none;border-top:1px solid #eee;margin:24px 0 16px;">'
+            . '<p style="font-size:12px;color:#999;line-height:1.5;">1324 11 Ave SW #202, Calgary &middot; a.art.shuhai@gmail.com<br>'
             . 'You are receiving this because you took a class or subscribed at art-shuhai.com. '
             . '<a href="' . $unsub . '" style="color:#999;">Unsubscribe</a>.</p>';
         return '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:560px;margin:0 auto;">'
-            . '<p>' . $escaped . '</p>' . $footer . '</div>';
+            . '<p>' . $escaped . '</p>' . $signoff . $footer . '</div>';
     }
 
     /** All paid Stripe Checkout sessions (minus refunds and $0 tests), cached 10 min. */
