@@ -782,23 +782,59 @@ createApp({
 
     // Join the backend's paid groups (keyed by event_id+name) against the current
     // content so the operator sees their live classes first, with stray/old rows after.
+    // Match each dated event to its reconciled group. Primary match is (event_id +
+    // exact name). If a class was renamed (typo fix), its old bookings keep the old
+    // name; with no exact match we adopt the single real (db_count>0) "orphan" group on
+    // the same event id (same class, former name). Past classes that reused an id live
+    // only in Stripe history (db_count 0) and are never adopted, so collisions stay apart.
+    const matchedGroups = computed(() => {
+      const data = ordersData.value;
+      const events = content.value?.events || [];
+      const keyOf = (id, name) => String(id) + '␟' + String(name);
+      const byId = new Map();
+      const usedKeys = new Set();
+      if (!data) return { byId, usedKeys, keyOf };
+      const groups = data.groups || [];
+      const gmap = new Map(groups.map(g => [keyOf(g.event_id, g.event_name), g]));
+      const exactKeys = new Set();
+      for (const ev of events) {
+        const k = keyOf(ev.id, ev.eventName);
+        if (gmap.has(k)) exactKeys.add(k);
+      }
+      for (const ev of events) {
+        const k = keyOf(ev.id, ev.eventName);
+        let g = gmap.get(k) || null;
+        if (g) {
+          usedKeys.add(k);
+        } else {
+          const orphans = groups.filter(x =>
+            String(x.event_id) === String(ev.id) &&
+            x.db_count > 0 &&
+            !exactKeys.has(keyOf(x.event_id, x.event_name))
+          );
+          if (orphans.length === 1) {
+            g = orphans[0];
+            usedKeys.add(keyOf(g.event_id, g.event_name));
+          }
+        }
+        byId.set(ev.id, g);
+      }
+      return { byId, usedKeys, keyOf };
+    });
+
     const ordersView = computed(() => {
       const data = ordersData.value;
       if (!data) return { current: [], stray: [] };
       const SEP = '\u0000';
-      const keyOf = (id, name) => String(id) + SEP + String(name);
-      const gmap = new Map((data.groups || []).map(g => [keyOf(g.event_id, g.event_name), g]));
-      const used = new Set();
       const current = [];
       // Reconcile only dated upcoming events — that's where "spots left" and the
       // DB/Stripe match are meaningful. Recurring "regular classes" have no fixed
       // capacity and accumulate orders over a long time, so flagging them as
       // mismatches would be noise.
-      const curEvents = (content.value?.events || []);
-      for (const ev of curEvents) {
-        const k = keyOf(ev.id, ev.eventName);
-        const g = gmap.get(k);
-        if (g) { current.push(g); used.add(k); }
+      const mg = matchedGroups.value;
+      for (const ev of (content.value?.events || [])) {
+        const g = mg.byId.get(ev.id);
+        if (g) { current.push(g); }
         else {
           current.push({
             event_id: String(ev.id),
@@ -814,7 +850,7 @@ createApp({
       // Only rows that actually exist in the database (db_count > 0) and don't match a
       // current event. Excludes the long tail of past classes that live only in Stripe
       // history (db_count 0) — those aren't "in the database" and aren't actionable here.
-      const stray = (data.groups || []).filter(g => g.db_count > 0 && !used.has(keyOf(g.event_id, g.event_name)));
+      const stray = (data.groups || []).filter(g => g.db_count > 0 && !mg.usedKeys.has(mg.keyOf(g.event_id, g.event_name)));
       return { current, stray };
     });
 
@@ -833,11 +869,10 @@ createApp({
       const events = content.value?.events || [];
       if (!data || !events.length) return { upcoming: [], past: [] };
       const SEP = '\u0000';
-      const keyOf = (id, name) => String(id) + SEP + String(name);
-      const gmap = new Map((data.groups || []).map(g => [keyOf(g.event_id, g.event_name), g]));
+      const mg = matchedGroups.value;
       const today = todayStr();
       const rows = events.map(ev => {
-        const g = gmap.get(keyOf(ev.id, ev.eventName)) || null;
+        const g = mg.byId.get(ev.id) || null;
         const cap = Number(ev.maxAttendees) > 0 ? Number(ev.maxAttendees) : (data.max || 12);
         const offline = Number(ev.bookedOffline) > 0 ? Number(ev.bookedOffline) : 0;
         const stripe = g ? (g.stripe_count != null ? g.stripe_count : g.db_count) : 0;
