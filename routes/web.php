@@ -21,6 +21,10 @@ Route::get('/thank-you', function () {
     return view('thank-you-page');
 });
 
+// Public unsubscribe landing for broadcast emails (CASL). GET = footer link / header
+// click; POST = RFC 8058 one-click (List-Unsubscribe-Post). Params read from query.
+Route::match(['get', 'post'], '/unsubscribe', [\App\Http\Controllers\AdminCmsController::class, 'unsubscribe']);
+
 // CMS admin (session-auth, server holds GitHub token).
 // Note: prefix is /cms (not /admin) to avoid conflict with the static UI in public/admin/.
 Route::prefix('cms')->group(function () {
@@ -34,4 +38,5 @@ Route::prefix('cms')->group(function () {
     Route::get('/orders',  [\App\Http\Controllers\AdminCmsController::class, 'orders']);
     Route::get('/clients', [\App\Http\Controllers\AdminCmsController::class, 'clients']);
     Route::get('/audience', [\App\Http\Controllers\AdminCmsController::class, 'audience']);
+    Route::post('/broadcast/send', [\App\Http\Controllers\AdminCmsController::class, 'sendBroadcast']);
 });
