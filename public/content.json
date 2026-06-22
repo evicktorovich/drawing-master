@@ -14,7 +14,7 @@
             "modalDescription": "A quiet moment where the last light lingers over water and fades into evening stillness. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
             "modalIncludes": null,
             "modalDiscount": null,
-            "maxAttendees": null
+            "maxAttendees": 2
         },
         {
             "id": 12,
@@ -30,22 +30,6 @@
             "modalDescription": "Learn how to paint expressive, realistic flowers in acrylics through a modern step-by-step approach designed for beginners and intermediate artists alike. Throughout this 5-week course, you’ll explore color mixing, light and shadow, soft petal transitions, texture, and depth while creating beautiful floral paintings on canvas. No previous experience needed — just a love for creativity and flowers.",
             "modalIncludes": null,
             "modalDiscount": null
-        },
-        {
-            "id": 1,
-            "eventName": "HUMMINGBIRD WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-07-08",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "assets/img/uploaded/1780460060-img-8075.jpg",
-            "modalDescription": "Join us for a relaxing and beginner-friendly workshop where you’ll learn how to create luminous colors, soft watercolor transitions, and expressive brushwork while painting this vibrant little bird. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": null
         },
         {
             "id": 2,
@@ -249,5 +233,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-06-16T17:39:21+00:00"
+    "updatedAt": "2026-06-22T16:09:05+00:00"
 }
