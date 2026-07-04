@@ -125,7 +125,7 @@
             "modalDescription": "Turn your favorite pet photo into a charming watercolor portrait while learning expressive washes, soft edges, and techniques for capturing personality and character.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
-            "maxAttendees": null
+            "maxAttendees": 0
         }
     ],
     "regularClasses": [
@@ -217,5 +217,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-06-24T04:33:06+00:00"
+    "updatedAt": "2026-07-04T01:19:16+00:00"
 }
