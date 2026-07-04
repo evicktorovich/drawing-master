@@ -48,22 +48,6 @@
             "maxAttendees": null
         },
         {
-            "id": 3,
-            "eventName": "LAVENDER FIELDS ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-07-15",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "assets/img/uploaded/1780460409-img-8503.png",
-            "modalDescription": "Immerse yourself in the beauty of Provence as we capture glowing lavender fields with expressive acrylic brushwork and rich, vibrant color. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": null
-        },
-        {
             "id": 13,
             "eventName": "SUNSET  IN VENICE WATERCOLOR CLASS",
             "startDate": null,
@@ -201,5 +185,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-07-04T01:43:08+00:00"
+    "updatedAt": "2026-07-04T03:16:05+00:00"
 }
