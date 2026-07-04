@@ -110,22 +110,6 @@
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
             "maxAttendees": null
-        },
-        {
-            "id": 17,
-            "eventName": "PET PORTRAIT WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-07-31",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1780461691-8opy.jpg",
-            "modalDescription": "Turn your favorite pet photo into a charming watercolor portrait while learning expressive washes, soft edges, and techniques for capturing personality and character.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null,
-            "maxAttendees": 0
         }
     ],
     "regularClasses": [
@@ -217,5 +201,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-07-04T01:19:16+00:00"
+    "updatedAt": "2026-07-04T01:43:08+00:00"
 }
