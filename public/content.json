@@ -1,22 +1,6 @@
 {
     "events": [
         {
-            "id": 10,
-            "eventName": "AFTERGLOW WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-06-24",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "j7.PNG",
-            "modalDescription": "A quiet moment where the last light lingers over water and fades into evening stillness. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": 2
-        },
-        {
             "id": 12,
             "eventName": "ACRYLIC PAINTING COURSE \"REALISTIC FLOWERS\" (5 sessions)",
             "startDate": "June 1 -",
@@ -30,22 +14,6 @@
             "modalDescription": "Learn how to paint expressive, realistic flowers in acrylics through a modern step-by-step approach designed for beginners and intermediate artists alike. Throughout this 5-week course, you’ll explore color mixing, light and shadow, soft petal transitions, texture, and depth while creating beautiful floral paintings on canvas. No previous experience needed — just a love for creativity and flowers.",
             "modalIncludes": null,
             "modalDiscount": null
-        },
-        {
-            "id": 2,
-            "eventName": "ABSTRACT URBAN SKYLINE CLASS",
-            "startDate": null,
-            "date": "2026-07-10",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly.  All supplies provided",
-            "img": "assets/img/uploaded/1780460260-img-6536.png",
-            "modalDescription": "An expressive impasto interpretation of the skyline, where abstract texture meets the rhythm of the city. Some images used in our announcements are digital visual references created to illustrate the theme of the class. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": null
         },
         {
             "id": 13,
@@ -185,5 +153,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-07-04T03:16:05+00:00"
+    "updatedAt": "2026-07-09T23:58:20+00:00"
 }
