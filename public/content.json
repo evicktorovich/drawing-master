@@ -16,22 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 13,
-            "eventName": "SUNSET  IN VENICE WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-07-17",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1780460934-img-8509.png",
-            "modalDescription": "Paint the romance of Venice at sunset while exploring luminous watercolor washes, atmospheric light, and the magic of reflections on water. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": null
-        },
-        {
             "id": 15,
             "eventName": "BENEATH THE PRAIRIE SKIES WATERCOLOR CLASS",
             "startDate": null,
@@ -153,5 +137,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-07-09T23:58:20+00:00"
+    "updatedAt": "2026-07-11T04:23:33+00:00"
 }
