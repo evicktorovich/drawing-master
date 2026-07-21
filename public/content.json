@@ -16,22 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 15,
-            "eventName": "BENEATH THE PRAIRIE SKIES WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-07-24",
-            "time": "6:00 pm - 9:00 pm",
-            "day": null,
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1780461345-img-8501.png",
-            "modalDescription": "Celebrate the quiet beauty of the prairies as we paint expansive skies, rolling hills, and luminous watercolor landscapes inspired by Alberta’s countryside. Final artworks created during the workshop may vary and will reflect each participant’s personal interpretation.",
-            "modalIncludes": null,
-            "modalDiscount": null,
-            "maxAttendees": null
-        },
-        {
             "id": 16,
             "eventName": "HYDRANGEA BLOOM ACRYLIC CLASS",
             "startDate": null,
@@ -228,5 +212,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-07-16T22:33:43+00:00"
+    "updatedAt": "2026-07-21T16:26:19+00:00"
 }
