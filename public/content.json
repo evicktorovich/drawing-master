@@ -105,6 +105,111 @@
             "modalDescription": "Discover how light and color can transform a simple landscape into a painting full of warmth, depth, and atmosphere.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
+        },
+        {
+            "id": 23,
+            "eventName": "WHEN THE SKY CRIES ACRYLIC CLASS",
+            "startDate": null,
+            "date": "2026-09-02",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Wednesday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1785729898-img-3049.png",
+            "modalDescription": "Discover how to paint realistic raindrops, soft-focus lights, and atmospheric depth in acrylic.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 24,
+            "eventName": "SUNLIT PASSAGE WATERCOLOR CLASS",
+            "startDate": null,
+            "date": "2026-09-04",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Friday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1785730107-img-2158.png",
+            "modalDescription": "Capture the timeless charm of a sunlit European street through luminous watercolor washes, transparent layers, and atmospheric light.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 25,
+            "eventName": "LAKE LOUISE ACRYLIC CLASS",
+            "startDate": null,
+            "date": "2026-09-09",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Wednesday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "louise.PNG",
+            "modalDescription": "Create a vibrant acrylic landscape while exploring bold palette knife textures, luminous reflections, and the dramatic colors of Lake Louise at sunset.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 26,
+            "eventName": "WHISPERS OF PRAGUE WATERCOLOR CLASS",
+            "startDate": null,
+            "date": "2026-09-11",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Friday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1785730523-img-2081.png",
+            "modalDescription": "Capture the timeless beauty of Prague in watercolor, learning to create luminous washes, soft atmospheric depth, and elegant architectural silhouettes with expressive light and reflections.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 27,
+            "eventName": "INTO THE ROCKIES ACRYLIC CLASS",
+            "startDate": null,
+            "date": "2026-09-16",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Wednesday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1785730688-img-3689.jpg",
+            "modalDescription": "Discover how expressive brushstrokes, vibrant color, and dramatic light bring the Rocky Mountains to life.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 28,
+            "eventName": "GOLDEN HOUR WATERCOLOR CLASS",
+            "startDate": null,
+            "date": "2026-09-18",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Friday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1785730785-img-2161.png",
+            "modalDescription": "Capture the magic of shimmering water, glowing reflections, and the quiet beauty of a peaceful harbor in watercolor.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 29,
+            "eventName": "GATHERED IN SUMMER ACRYLIC CLASS",
+            "startDate": null,
+            "date": "2026-09-30",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Wednesday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1785730920-img-2079.png",
+            "modalDescription": "Create a luminous floral still life while learning to build depth, texture, and vibrant color with acrylics.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
         }
     ],
     "regularClasses": [
@@ -196,5 +301,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-07-27T04:10:18+00:00"
+    "updatedAt": "2026-08-03T04:22:13+00:00"
 }
