@@ -16,21 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 18,
-            "eventName": "KISS OF THE TIDE ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-08-03",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Monday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1783883677-img-0339.jpg",
-            "modalDescription": "Paint this peaceful seaside scene with me while learning how to create glowing skies, sparkling water, and expressive acrylic textures—perfect for beginners and experienced artists alike.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 19,
             "eventName": "PINK FLAMINGO ACRYLIC CLASS",
             "startDate": null,
@@ -301,5 +286,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-03T04:22:13+00:00"
+    "updatedAt": "2026-08-04T15:36:47+00:00"
 }
