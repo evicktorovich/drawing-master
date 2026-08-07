@@ -45,6 +45,17 @@
                             <div class="f-carousel__slide" v-for="event in events" v-if="expiredEvent(event.date)">
                                 <div class="events-block ">
                                     <img :src="imgSrc(event.img)" alt="event.img" class="events-block-img" loading="lazy">
+                                    <button type="button" class="events-block-share"
+                                            :class="{ 'events-block-share--done': copiedSlug === eventSlug(event, 'event') }"
+                                            @click.stop="copyEventLink(event, 'event')"
+                                            :aria-label="'Copy the link to ' + event.eventName">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                        </svg>
+                                        {{ copiedSlug === eventSlug(event, 'event') ? 'Copied' : 'Share' }}
+                                    </button>
                                     <div v-if="isSoldOut(event.id)" class="events-block-corner-badge events-block-corner-badge--soldout">SOLD OUT</div>
                                     <div v-else class="events-block-corner-badge"
                                          :class="{ 'events-block-corner-badge--low': spotsLeft(event.id) <= 3 }">
@@ -84,6 +95,17 @@
                             <div class="f-carousel__slide" v-for="infinityEvent in infinityEvent">
                                 <div class="events-block ">
                                     <img :src="imgSrc(infinityEvent.img)" alt="event.img" class="events-block-img">
+                                    <button type="button" class="events-block-share"
+                                            :class="{ 'events-block-share--done': copiedSlug === eventSlug(infinityEvent, 'infinityEvent') }"
+                                            @click.stop="copyEventLink(infinityEvent, 'infinityEvent')"
+                                            :aria-label="'Copy the link to ' + infinityEvent.eventName">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                        </svg>
+                                        {{ copiedSlug === eventSlug(infinityEvent, 'infinityEvent') ? 'Copied' : 'Share' }}
+                                    </button>
                                     <div class="events-block-container d-flex flex-column justify-content-between">
                                         <div class="events-block-container-content">
                                             <div class="events-block-title">{{infinityEvent.eventName}}</div>
@@ -244,6 +266,7 @@
 <script>
 import moment from "moment";
 import {events, infinityEvent} from "@/events.js";
+import {findBySlug, slugForEvent} from "@/eventLinks.js";
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import {Carousel} from "@fancyapps/ui/dist/carousel/carousel.esm.js";
 import {Autoplay} from "@fancyapps/ui/dist/carousel/carousel.autoplay.esm.js";
@@ -270,6 +293,10 @@ export default {
             studentWorks: true,
             availability: {},   // { [eventId]: paidCount }
             maxAttendees: 12,
+            // Set by the /event/{slug} route (see EventPageController) — the class
+            // whose popup should open on load.
+            deepLink: (typeof window !== 'undefined' && window.__DEEPLINK__) || null,
+            copiedSlug: null,
             form: {
                 name: "",
                 email: "",
@@ -344,11 +371,115 @@ export default {
             const today = moment().startOf("day");
             return !eventDate.isBefore(today);
         },
-        openEventModal(eventObj, type) {
+        openEventModal(eventObj, type, options) {
+            if (!options || options.updateUrl !== false) this.pushEventUrl(eventObj, type);
             this.$refs.productModal.openModal(eventObj, type);
         },
-        openWaitlistModal(event) {
+        openWaitlistModal(event, options) {
+            if (!options || options.updateUrl !== false) this.pushEventUrl(event, 'event');
             this.$refs.waitlistModal.openModal(event);
+        },
+        // --- per-class links (/event/{slug}) -------------------------------
+        eventList(type) {
+            return type === 'infinityEvent' ? this.infinityEvent : this.events;
+        },
+        eventSlug(event, type) {
+            return slugForEvent(this.eventList(type), event);
+        },
+        eventPath(event, type) {
+            return '/event/' + this.eventSlug(event, type);
+        },
+        eventLink(event, type) {
+            return window.location.origin + this.eventPath(event, type);
+        },
+        copyEventLink(event, type) {
+            const link = this.eventLink(event, type);
+            const slug = this.eventSlug(event, type);
+            const done = () => {
+                this.copiedSlug = slug;
+                setTimeout(() => {
+                    if (this.copiedSlug === slug) this.copiedSlug = null;
+                }, 2000);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(link).then(done).catch(() => this.copyFallback(link, done));
+            } else {
+                this.copyFallback(link, done);
+            }
+        },
+        copyFallback(text, done) {
+            const input = document.createElement('input');
+            input.value = text;
+            input.setAttribute('readonly', '');
+            input.style.position = 'fixed';
+            input.style.opacity = '0';
+            document.body.appendChild(input);
+            input.select();
+            try {
+                document.execCommand('copy');
+                done();
+            } catch (e) {
+                window.prompt('Copy this link:', text);
+            }
+            document.body.removeChild(input);
+        },
+        pushEventUrl(event, type) {
+            const path = this.eventPath(event, type);
+            if (window.location.pathname === path) return;
+            try {
+                history.pushState({artEventModal: true}, '', path);
+            } catch (e) { /* history blocked — the popup still works */ }
+        },
+        // Called when a popup closes: drop the /event/... path again.
+        restoreUrl() {
+            if (window.location.pathname.indexOf('/event/') !== 0) return;
+            try {
+                if (history.state && history.state.artEventModal) history.back(); // undo our own push
+                else history.replaceState({}, '', '/');
+            } catch (e) { /* ignore */ }
+        },
+        openClassModal(event, type, options) {
+            if (type === 'event' && this.isSoldOut(event.id)) this.openWaitlistModal(event, options);
+            else this.openEventModal(event, type, options);
+        },
+        // Back / forward buttons: the URL decides which popup is open.
+        syncFromUrl() {
+            const match = window.location.pathname.match(/^\/event\/([^/?#]+)/);
+            if (!match) {
+                const order = this.$refs.productModal;
+                const waitlist = this.$refs.waitlistModal;
+                if (order && order.isVisible) order.closeModal();
+                if (waitlist && waitlist.isVisible) waitlist.closeModal();
+                return;
+            }
+            const slug = decodeURIComponent(match[1]);
+            const event = findBySlug(this.events, slug);
+            if (event) return this.openClassModal(event, 'event', {updateUrl: false});
+            const regular = findBySlug(this.infinityEvent, slug);
+            if (regular) this.openClassModal(regular, 'infinityEvent', {updateUrl: false});
+        },
+        // Landed straight on /event/{slug}: scroll to the class and open it.
+        applyDeepLink() {
+            const deepLink = this.deepLink;
+            this.deepLink = null; // once per page load
+            if (!deepLink || !deepLink.slug) return;
+
+            const event = findBySlug(this.eventList(deepLink.type), deepLink.slug);
+            if (!event) return;
+            if (deepLink.type === 'event' && !this.expiredEvent(event.date)) return; // already happened
+
+            this.$nextTick(() => {
+                const anchor = document.getElementById(deepLink.type === 'infinityEvent' ? 'infinity-events' : 'events');
+                if (anchor) anchor.scrollIntoView({behavior: 'smooth', block: 'start'});
+                if (deepLink.type === 'event' && this.eventsCarousel) {
+                    const shown = this.events.filter(e => this.expiredEvent(e.date));
+                    const index = shown.indexOf(event);
+                    try {
+                        if (index > 0) this.eventsCarousel.slideTo(index);
+                    } catch (e) { /* carousel API changed — position is cosmetic */ }
+                }
+                this.openClassModal(event, deepLink.type, {updateUrl: false});
+            });
         },
         eventCap(event) {
             // Per-event override beats the global default. Default to globalMax otherwise.
@@ -381,7 +512,7 @@ export default {
             return 'assets/img/' + img;
         },
         fetchAvailability() {
-            fetch('/api/availability', { headers: { 'Accept': 'application/json' } })
+            return fetch('/api/availability', { headers: { 'Accept': 'application/json' } })
                 .then(r => (r.ok ? r.json() : null))
                 .then(data => {
                     if (!data) return;
@@ -403,13 +534,18 @@ export default {
                 center: false,
                 Autoplay: { timeout: 3000 },
             };
-            new Carousel(eventsContainer, options, {Autoplay});
+            // Kept off `data` on purpose: Vue 2 would make the whole carousel reactive.
+            this.eventsCarousel = new Carousel(eventsContainer, options, {Autoplay});
             new Carousel(infinityEventsContainer, options, {Autoplay});
         };
 
+        // A popup closing (X, backdrop) should also drop the /event/... path.
+        EventBus.$on('modal:closed', this.restoreUrl);
+        window.addEventListener('popstate', this.syncFromUrl);
+
         // Fetch CMS content (managed via /admin). Falls back to hardcoded defaults if unavailable.
         const url = `/content.json?ts=${Math.floor(Date.now() / 60000)}`; // bust 1-min cache
-        fetch(url)
+        const contentReady = fetch(url)
             .then(r => (r.ok ? r.json() : null))
             .then(cms => {
                 if (!cms) return;
@@ -424,7 +560,9 @@ export default {
             .catch(() => {})
             .finally(() => this.$nextTick(initCarousels));
 
-        this.fetchAvailability();
+        // Both are needed before a /event/{slug} link can open the right popup:
+        // the class list, and whether that class is already sold out.
+        Promise.all([contentReady, this.fetchAvailability()]).then(() => this.applyDeepLink());
     }
 };
 </script>
@@ -658,6 +796,37 @@ export default {
                 &--soldout {
                     color: #fff;
                     background: #c0392b;
+                }
+            }
+
+            &-share {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 14px;
+                border: none;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.95);
+                color: #2d2d2d;
+                font-family: Montserrat, sans-serif;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                cursor: pointer;
+                z-index: 2;
+                transition: background-color 0.2s ease;
+
+                &:hover {
+                    background: rgb(255, 201, 139);
+                }
+
+                &--done {
+                    background: rgb(255, 183, 133);
                 }
             }
 

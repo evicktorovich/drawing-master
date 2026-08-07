@@ -75,6 +75,11 @@
   .imgpicker label.file:hover{background:#fff5ea;}
   .imgpicker .url{font-size:12px;font-family:ui-monospace,monospace;background:#faf5ef;padding:6px 8px;border-radius:6px;word-break:break-all;}
 
+  /* Per-event permalink row */
+  .linkrow{display:flex;gap:8px;align-items:center;}
+  .linkrow-input{flex:1;font-family:ui-monospace,monospace;font-size:13px;background:#faf5ef;}
+  .linkrow .btn{white-space:nowrap;}
+
   /* Gallery grid */
   .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
   @media (max-width:900px){.gallery-grid{grid-template-columns:repeat(3,1fr);}}
@@ -217,6 +222,14 @@
           <div class="field">
             <label>Title</label>
             <input v-model="ev.eventName" @input="markDirty">
+          </div>
+          <div class="field">
+            <label>Direct link to this {{ tab==='events' ? 'event' : 'class' }}</label>
+            <div class="linkrow">
+              <input class="linkrow-input" :value="itemLink(ev)" readonly @focus="$event.target.select()">
+              <button class="btn btn-outline" @click="copyItemLink(ev)">{{ copiedLinkId === ev.id ? 'Copied ✓' : 'Copy' }}</button>
+            </div>
+            <div class="hint">Share it in ads, Instagram or emails — it opens the site with this class already open for booking. The link is built from the title (and the date, if two classes share a title), so it changes when you rename the class.</div>
           </div>
           <div class="grid-3">
             <div class="field" v-if="tab==='events'">
@@ -747,6 +760,7 @@ createApp({
     const bcFilter = ref('all');
     const bcPage = ref(1);
     const copied = ref(false);
+    const copiedLinkId = ref(null); // per-event "copy link" feedback
     const bcTestEmail = ref('');
     const bcSending = ref(''); // '' | 'test' | 'bulk'
     const bcResult = ref(null); // { error:bool, msg }
@@ -1310,6 +1324,50 @@ createApp({
     function addFaq() { content.value.siteText.faq.push({ question: '', answer: '' }); markDirty(); }
     function removeFaq(i) { content.value.siteText.faq.splice(i, 1); markDirty(); }
 
+    // ---- per-event permalinks (/event/{slug}) ----
+    // Same rules as app/Support/EventLinks.php and resources/js/eventLinks.js:
+    // slug = title; the date is added only when two classes share a title.
+    function slugify(text) {
+      return String(text == null ? '' : text)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+    function slugsFor(list) {
+      const items = Array.isArray(list) ? list : [];
+      const bases = items.map(item => slugify(item && item.eventName) || 'class');
+      const counts = {};
+      bases.forEach(base => { counts[base] = (counts[base] || 0) + 1; });
+      const seen = {};
+      return bases.map((base, i) => {
+        const date = String((items[i] && items[i].date) || '');
+        let slug = base;
+        if (counts[base] > 1 && date !== '' && date !== '%') slug = `${base}-${slugify(date)}`;
+        const n = (seen[slug] || 0) + 1;
+        seen[slug] = n;
+        return n > 1 ? `${slug}-${n}` : slug;
+      });
+    }
+    function itemLink(ev) {
+      const list = currentList.value;
+      const i = list.indexOf(ev);
+      const slug = i === -1 ? slugify(ev && ev.eventName) : slugsFor(list)[i];
+      return `${location.origin}/event/${slug || 'class'}`;
+    }
+    async function copyItemLink(ev) {
+      const link = itemLink(ev);
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch (e) {
+        window.prompt('Copy this link:', link);
+        return;
+      }
+      copiedLinkId.value = ev.id;
+      setTimeout(() => { if (copiedLinkId.value === ev.id) copiedLinkId.value = null; }, 1500);
+    }
+
     function canonicalImgUrl(img) {
       if (!img) return '';
       if (/^https?:\/\//.test(img)) return img;
@@ -1347,6 +1405,7 @@ createApp({
       currentList, addItem, removeItem, moveUp, moveDown,
       markDirty, statusText, statusClass,
       handleUpload, handleGalleryUpload, removeGalleryImg, imgUrl, canonicalImgUrl,
+      itemLink, copyItemLink, copiedLinkId,
       whyLeftItemsText, whyRightItemsText, aboutParagraphsText,
       addFaq, removeFaq,
       toast,

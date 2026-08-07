@@ -21,6 +21,11 @@ Route::get('/thank-you', function () {
     return view('thank-you-page');
 });
 
+// Shareable page per class — same site, but with that class's title, preview
+// image and sign-up popup. Slugs are built in App\Support\EventLinks.
+Route::get('/event/{slug}', [\App\Http\Controllers\EventPageController::class, 'show'])
+    ->where('slug', '[^/]+');
+
 // Public unsubscribe landing for broadcast emails (CASL). GET = footer link / header
 // click; POST = RFC 8058 one-click (List-Unsubscribe-Post). Params read from query.
 Route::match(['get', 'post'], '/unsubscribe', [\App\Http\Controllers\AdminCmsController::class, 'unsubscribe']);

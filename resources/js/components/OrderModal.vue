@@ -191,6 +191,7 @@ export default {
                 this.isVisible = false;
                 document.body.style.overflow = '';
                 this.resetForm();
+                EventBus.$emit('modal:closed'); // MainPage drops the /event/... path
             }
         },
         resetForm() {

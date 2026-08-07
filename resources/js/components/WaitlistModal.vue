@@ -70,6 +70,7 @@
 
 <script>
 import moment from "moment/moment.js";
+import { EventBus } from '@/eventBus';
 
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -120,6 +121,7 @@ export default {
             this.isVisible = false;
             document.body.style.overflow = '';
             this.resetForm();
+            EventBus.$emit('modal:closed'); // MainPage drops the /event/... path
         },
         resetForm() {
             this.name = '';
