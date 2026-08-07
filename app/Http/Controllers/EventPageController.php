@@ -19,8 +19,10 @@ class EventPageController extends Controller
         $hit = EventLinks::resolve($slug);
 
         // Unknown link, or the class already happened — send people to what's on now.
+        // Absolute https on purpose: behind Railway's proxy a relative redirect
+        // comes back as http:// and costs the visitor an extra hop.
         if (!$hit || EventLinks::isPast($hit['event'])) {
-            return redirect('/#events');
+            return redirect(EventLinks::CANONICAL_BASE . '/#events');
         }
         if ($hit['slug'] !== $slug) {
             return redirect(EventLinks::url($hit['slug']), 301);
