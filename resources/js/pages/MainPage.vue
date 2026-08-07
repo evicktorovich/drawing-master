@@ -158,9 +158,9 @@
                          }"
                     >
                         <div class="gallery-wrapper">
-                            <a v-for="(img, index) in images.student" class="gallery-item" data-fancybox="gallery-students" :href="img">
+                            <a v-for="(img, index) in images.student" class="gallery-item" data-fancybox="gallery-students" :href="imgSrc(img)">
                                 <img
-                                    :src="img"
+                                    :src="imgSrc(img)"
                                     :alt="'students-paintings'+index"
                                     class="adaptive-img"
                                     loading="lazy"
@@ -178,9 +178,9 @@
                          }"
                     >
                         <div class="gallery-wrapper">
-                            <a v-for="(img, index) in images.my" class="gallery-item" data-fancybox="gallery-my" :href="img">
+                            <a v-for="(img, index) in images.my" class="gallery-item" data-fancybox="gallery-my" :href="imgSrc(img)">
                                 <img
-                                    :src="img"
+                                    :src="imgSrc(img)"
                                     :alt="'my-paintings'+index"
                                     class="adaptive-img"
                                     loading="lazy"
@@ -267,6 +267,7 @@
 import moment from "moment";
 import {events, infinityEvent} from "@/events.js";
 import {findBySlug, slugForEvent} from "@/eventLinks.js";
+import {imageUrl} from "@/imageUrl.js";
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import {Carousel} from "@fancyapps/ui/dist/carousel/carousel.esm.js";
 import {Autoplay} from "@fancyapps/ui/dist/carousel/carousel.autoplay.esm.js";
@@ -505,11 +506,9 @@ export default {
             return Math.max(0, this.eventCap(event) - this.bookedTotal(event));
         },
         imgSrc(img) {
-            // Mirror of admin's imgUrl(): handle three storage formats that CMS may produce.
-            if (!img) return '';
-            if (/^https?:\/\//.test(img)) return img;
-            if (img.startsWith('assets/')) return '/' + img;
-            return 'assets/img/' + img;
+            // Handles the three storage formats the CMS may produce, and keeps the
+            // result root-relative so it also resolves on /event/{slug}.
+            return imageUrl(img);
         },
         fetchAvailability() {
             return fetch('/api/availability', { headers: { 'Accept': 'application/json' } })

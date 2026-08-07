@@ -11,10 +11,21 @@
                     </div>
                     <div class="modal-body">
                         <div v-if="!submitted">
-                            <div class="modal-body-description mb-3">
-                                <strong>{{ selectedEvent.eventName }}</strong> is currently sold out.
-                                Leave your details — we'll reach out if a spot opens up
-                                or as soon as a new session is scheduled.
+                            <!-- Same as the sign-up popup: a visitor arriving from /event/{slug}
+                                 should see the class, not just a form. -->
+                            <div class="modal-class d-flex flex-column flex-lg-row gap-3 gap-lg-4 mb-4">
+                                <img v-if="coverUrl" :src="coverUrl" :alt="selectedEvent.eventName"
+                                     class="modal-class-img">
+                                <div class="modal-class-text">
+                                    <div v-if="selectedEvent.eventName" class="modal-class-name">
+                                        {{ selectedEvent.eventName }}
+                                    </div>
+                                    <div class="modal-body-description mb-0">
+                                        This class is currently sold out. Leave your details — we'll
+                                        reach out if a spot opens up or as soon as a new session is
+                                        scheduled.
+                                    </div>
+                                </div>
                             </div>
                             <div class="modal-body-information d-flex align-items-center gap-2">
                                 <img src="assets/img/icon-date.svg" alt="date">
@@ -71,6 +82,7 @@
 <script>
 import moment from "moment/moment.js";
 import { EventBus } from '@/eventBus';
+import { imageUrl } from "@/imageUrl.js";
 
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -90,6 +102,9 @@ export default {
         };
     },
     computed: {
+        coverUrl() {
+            return imageUrl(this.selectedEvent && this.selectedEvent.img);
+        },
         isButtonDisabled() {
             return this.name.trim() === '' ||
                 !this.validateEmail(this.email) ||
@@ -209,6 +224,39 @@ export default {
         @media (max-width: 991px) {
             font-size: 36px !important;
             margin-bottom: 20px;
+        }
+    }
+
+    &-class {
+        &-img {
+            flex: none;
+            width: 260px;
+            height: 260px;
+            object-fit: cover;
+            border-radius: 30px;
+            background: rgb(245, 242, 238);
+
+            @media (max-width: 991px) {
+                width: 100%;
+                height: 240px;
+                border-radius: 24px;
+            }
+        }
+
+        &-text {
+            min-width: 0;
+        }
+
+        &-name {
+            font-family: Cormorant Garamond, serif;
+            font-size: 30px;
+            font-weight: 500;
+            line-height: 115%;
+            margin-bottom: 12px;
+
+            @media (max-width: 991px) {
+                font-size: 26px;
+            }
         }
     }
 

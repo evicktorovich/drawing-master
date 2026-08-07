@@ -11,7 +11,18 @@
                         <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="modal-body-description mb-4" v-html="selectedEvent.modalDescription">
+                        <!-- Opened straight from /event/{slug} the popup is all the visitor
+                             sees, so it has to show what the class is and what they'll paint. -->
+                        <div class="modal-class d-flex flex-column flex-lg-row gap-3 gap-lg-4 mb-4">
+                            <img v-if="coverUrl" :src="coverUrl" :alt="selectedEvent.eventName"
+                                 class="modal-class-img">
+                            <div class="modal-class-text">
+                                <div v-if="selectedEvent.eventName" class="modal-class-name">
+                                    {{ selectedEvent.eventName }}
+                                </div>
+                                <div class="modal-body-description mb-0" v-html="selectedEvent.modalDescription">
+                                </div>
+                            </div>
                         </div>
                         <div class="modal-body-information d-flex align-items-center gap-2">
                             <img src="assets/img/icon-date.svg" alt="date">
@@ -118,6 +129,7 @@
 <script>
 import { EventBus } from '@/eventBus';
 import { events, infinityEvent } from "@/events.js";
+import { imageUrl } from "@/imageUrl.js";
 import moment from "moment/moment.js";
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -149,6 +161,9 @@ export default {
         }
     },
     computed: {
+        coverUrl() {
+            return imageUrl(this.selectedEvent && this.selectedEvent.img);
+        },
         isButtonDisabled() {
             return this.name.trim() === '' ||
                 this.email.trim() === '' ||
@@ -364,6 +379,39 @@ export default {
         @media (max-width: 991px) {
             font-size: 36px !important;
             margin-bottom: 20px;
+        }
+    }
+
+    &-class {
+        &-img {
+            flex: none;
+            width: 260px;
+            height: 260px;
+            object-fit: cover;
+            border-radius: 30px;
+            background: rgb(245, 242, 238);
+
+            @media (max-width: 991px) {
+                width: 100%;
+                height: 240px;
+                border-radius: 24px;
+            }
+        }
+
+        &-text {
+            min-width: 0;
+        }
+
+        &-name {
+            font-family: Cormorant Garamond, serif;
+            font-size: 30px;
+            font-weight: 500;
+            line-height: 115%;
+            margin-bottom: 12px;
+
+            @media (max-width: 991px) {
+                font-size: 26px;
+            }
         }
     }
 
