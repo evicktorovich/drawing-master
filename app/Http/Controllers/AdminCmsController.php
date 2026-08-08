@@ -765,6 +765,7 @@ class AdminCmsController extends Controller
         }
         try {
             $content['updatedAt'] = now()->toIso8601String();
+            $content['lastEventId'] = $this->highestClassId($content);
             $payload = json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
             $resp = Http::withToken($token)
                 ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28'])
@@ -785,6 +786,26 @@ class AdminCmsController extends Controller
             Log::error('AdminCms save failed', ['err' => $e->getMessage()]);
             return response()->json(['error' => 'Save failed: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Highest class number ever handed out.
+     *
+     * Stored in content.json and never allowed to go down, so a class number is
+     * retired with its class: paid orders live under that number, and reissuing
+     * it makes the old orders count against the new class. Kept server-side as
+     * well as in the editor so a stale open browser tab cannot reset it.
+     */
+    private function highestClassId(array $content): int
+    {
+        $ids = [(int) ($content['lastEventId'] ?? 0)];
+        foreach (['events', 'regularClasses'] as $key) {
+            foreach ((array) ($content[$key] ?? []) as $item) {
+                $ids[] = (int) (is_array($item) ? ($item['id'] ?? 0) : 0);
+            }
+        }
+
+        return max($ids);
     }
 
     public function upload(Request $request)

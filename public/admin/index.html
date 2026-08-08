@@ -1291,10 +1291,23 @@ createApp({
     }
 
     // ---- list ops ----
+    // Numbers are handed out from a high-water mark that only ever grows, never
+    // from the current list: paid orders are stored under the class number, so
+    // giving a deleted class's number to a new class hands over its sold seats
+    // too (that is how SUN-CROWNED inherited PET PORTRAIT's SOLD OUT badge).
+    function nextClassId() {
+      const used = [
+        Number(content.value.lastEventId) || 0,
+        ...(content.value.events || []).map(x => Number(x.id) || 0),
+        ...(content.value.regularClasses || []).map(x => Number(x.id) || 0),
+      ];
+      const next = Math.max(0, ...used) + 1;
+      content.value.lastEventId = next;
+      return next;
+    }
     function addItem() {
       const list = tab.value === 'events' ? content.value.events : content.value.regularClasses;
-      const ids = list.map(x => x.id);
-      const next = (ids.length ? Math.max(...ids) : 0) + 1;
+      const next = nextClassId();
       const tmpl = tab.value === 'events'
         ? { id: next, eventName: 'NEW EVENT', startDate: null, date: '2026-01-01', time: '6:00 pm - 9:00 pm', day: null, price: 0, location: '1324 11 Ave SW, #202, Calgary', description: 'Beginner-friendly. All supplies provided', img: '', modalDescription: '', modalIncludes: null, modalDiscount: null }
         : { id: next, eventName: 'NEW CLASS', time: '6:00 pm - 9:00 pm', date: '%', day: 'Saturday', price: 0, location: '1324 11 Ave SW, #202, Calgary', description: 'All supplies provided', img: '', modalDescription: '', modalIncludes: null, modalDiscount: null };
