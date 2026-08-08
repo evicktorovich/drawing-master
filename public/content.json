@@ -59,7 +59,7 @@
             "modalDescription": "Create a vibrant sunflower painting while learning how to build bold shapes, rich color contrasts, and expressive texture with acrylics.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
-            "maxAttendees": 12
+            "maxAttendees": 5
         },
         {
             "id": 21,
@@ -286,5 +286,5 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-04T15:36:47+00:00"
+    "updatedAt": "2026-08-08T16:43:57+00:00"
 }
