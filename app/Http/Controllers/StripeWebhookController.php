@@ -78,6 +78,7 @@ class StripeWebhookController extends Controller
                     'content_name' => $lead->event_name,
                     'content_ids'  => $lead->event_id ? [(string) $lead->event_id] : [],
                     'content_type' => 'product',
+                    'num_items'    => $lead->seatCount(),
                     'order_id'     => $session->id,
                 ],
                 eventSourceUrl: config('app.frontend_url') . '/thank-you',
@@ -97,10 +98,13 @@ class StripeWebhookController extends Controller
         $message .= "*Client:* {$lead->name}\n";
         $message .= "*Email:* {$lead->email}\n";
         $message .= "*Phone:* {$lead->phone}\n\n";
+        $seats = $lead->seatCount();
+
         $message .= "*Event:* {$lead->event_name}\n";
         $message .= "*Date:* {$lead->event_date}\n";
         $message .= "*Time:* {$lead->event_time}\n";
         $message .= "*Location:* {$lead->event_location}\n";
+        $message .= "*Spots:* {$seats}\n";
         $message .= "*Amount:* " . number_format($lead->event_price, 2) . " CAD\n\n";
         $message .= "*Payment status:* " . ucfirst($paymentStatus) . "\n\n";
         $message .= "*Message:*\n{$lead->message}\n\n";

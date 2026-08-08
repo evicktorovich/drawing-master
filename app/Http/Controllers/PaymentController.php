@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lead;
 use App\Services\MetaCapi;
+use App\Support\ClassSeats;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,6 +12,9 @@ use Stripe\Stripe;
 
 class PaymentController extends Controller
 {
+    /** A studio class seats twelve; nobody books a group larger than the room. */
+    private const MAX_SEATS_PER_ORDER = 12;
+
     public function createCheckoutSession(Request $request)
     {
         try {
@@ -35,8 +39,32 @@ class PaymentController extends Controller
                 'email'          => 'required|email',
                 'phone'          => 'required|string',
                 'message'        => 'nullable|string',
+                'seats'          => 'nullable|integer|min:1|max:' . self::MAX_SEATS_PER_ORDER,
                 'security_nonce' => 'nullable|string',
             ]);
+
+            $seats = max(1, (int) ($validated['seats'] ?? 1));
+
+            // Code can go live a moment before its migration runs. Rather than
+            // quietly charge for one spot when three were asked for, say so.
+            if ($seats > 1 && ! Lead::tracksSeats()) {
+                return response()->json([
+                    'message' => 'Booking several spots at once is being set up. Please book one spot at a time for now.',
+                ], 503);
+            }
+
+            // Last word on capacity: the browser caps the picker at the spots it
+            // knew about when the popup opened, which can be stale by the time
+            // someone pays. Checking here is what actually stops an oversell.
+            $spotsLeft = $this->spotsLeft((int) $validated['eventId']);
+            if ($spotsLeft !== null && $seats > $spotsLeft) {
+                return response()->json([
+                    'message' => $spotsLeft === 0
+                        ? 'This class has just sold out. Please join the waitlist.'
+                        : 'Only ' . $spotsLeft . ' ' . ($spotsLeft === 1 ? 'spot is' : 'spots are') . ' left for this class.',
+                    'spotsLeft' => $spotsLeft,
+                ], 422);
+            }
 
             $stripeSecret = config('services.stripe.secret');
             if (empty($stripeSecret)) {
@@ -62,6 +90,7 @@ class PaymentController extends Controller
                 'eventDate'      => $validated['eventDate'],
                 'eventTime'      => $validated['eventTime'],
                 'eventLocation'  => $validated['eventLocation'],
+                'seats'          => $seats,
                 'security_nonce' => $validated['security_nonce'],
             ];
 
@@ -77,7 +106,7 @@ class PaymentController extends Controller
                 ->first();
 
             if (! $lead) {
-                $lead = Lead::create([
+                $lead = Lead::create(array_filter([
                     'name'           => $validated['name'],
                     'email'          => $validated['email'],
                     'phone'          => $validated['phone'] ?? null,
@@ -88,9 +117,13 @@ class PaymentController extends Controller
                     'event_time'     => $validated['eventTime'],
                     'event_location' => $validated['eventLocation'],
                     'event_price'    => $validated['price'],
+                    'seats'          => Lead::tracksSeats() ? $seats : null,
                     'payment_status' => 'pending',
                     'security_nonce' => $validated['security_nonce'],
-                ]);
+                ], fn ($value) => $value !== null));
+            } elseif (Lead::tracksSeats() && $lead->seatCount() !== $seats) {
+                // Same visitor came back and changed the number of spots before paying.
+                $lead->update(['seats' => $seats]);
             }
 
             // if ($lead->stripe_session_id) {
@@ -116,7 +149,7 @@ class PaymentController extends Controller
                         ],
                         'unit_amount'  => (int) round($validated['price'] * 100),
                     ],
-                    'quantity'   => 1,
+                    'quantity'   => $seats,
                 ]],
                 'mode'                 => 'payment',
                 'success_url'          => $frontendUrl . '/thank-you?session_id={CHECKOUT_SESSION_ID}&lead_id=' . $lead->id,
@@ -193,6 +226,17 @@ class PaymentController extends Controller
 /**
  * Формирует описание события для Stripe
  */
+    /**
+     * Spots still open for a one-off class, or null when the class has no
+     * capacity to speak of (regular classes recur and are never "full").
+     */
+    private function spotsLeft(int $eventId): ?int
+    {
+        $event = ClassSeats::event($eventId);
+
+        return $event === null ? null : ClassSeats::spotsLeft($event);
+    }
+
     private function buildEventDescription(array $data): string
     {
         $description = [];

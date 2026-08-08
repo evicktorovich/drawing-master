@@ -62,16 +62,22 @@ class AdminCmsController extends Controller
         $max = (int) config('services.event_max_attendees', 12);
 
         // ---- DB side: paid leads, grouped by (event_id + event_name) ----
+        // Counts throughout are *spots*, not orders — one order can book several.
+        $columns = ['name', 'email', 'phone', 'event_id', 'event_name', 'event_price', 'event_date', 'created_at'];
+        if (\App\Models\Lead::tracksSeats()) {
+            $columns[] = 'seats';
+        }
         $leads = \App\Models\Lead::where('payment_status', 'paid')
             ->orderBy('event_id')
             ->orderBy('id')
-            ->get(['name', 'email', 'phone', 'event_id', 'event_name', 'event_price', 'event_date', 'created_at']);
+            ->get($columns);
 
-        $byId = [];     // event_id => count  (mirrors /api/availability — what the public badge subtracts)
+        $byId = [];     // event_id => spots  (mirrors /api/availability — what the public badge subtracts)
         $groups = [];   // "id\0name" => group
         foreach ($leads as $l) {
             $eid = (string) ($l->event_id ?? '');
-            $byId[$eid] = ($byId[$eid] ?? 0) + 1;
+            $seats = $l->seatCount();
+            $byId[$eid] = ($byId[$eid] ?? 0) + $seats;
             $key = $eid . $SEP . (string) $l->event_name;
             if (!isset($groups[$key])) {
                 $groups[$key] = [
@@ -85,6 +91,7 @@ class AdminCmsController extends Controller
                 'name'   => (string) $l->name,
                 'email'  => (string) $l->email,
                 'phone'  => (string) $l->phone,
+                'seats'  => $seats,
                 'amount' => $l->event_price !== null ? (float) $l->event_price : null,
                 'date'   => optional($l->created_at)->toDateString(),
             ];
@@ -130,15 +137,16 @@ class AdminCmsController extends Controller
                 $eid   = (string) ($s->metadata->event_id ?? '');
                 $enm   = (string) ($s->metadata->eventName ?? '');
                 $email = (string) ($s->customer_email ?? ($s->customer_details->email ?? ''));
+                $seats = max(1, (int) ($s->metadata->seats ?? 1));
                 $key   = $eid . $SEP . $enm;
                 if (!isset($stripe['byKey'][$key])) {
                     $stripe['byKey'][$key] = ['count' => 0, 'emails' => []];
                 }
-                $stripe['byKey'][$key]['count']++;
+                $stripe['byKey'][$key]['count'] += $seats;
                 if ($email !== '') {
                     $stripe['byKey'][$key]['emails'][] = $email;
                 }
-                $stripe['byId'][$eid] = ($stripe['byId'][$eid] ?? 0) + 1;
+                $stripe['byId'][$eid] = ($stripe['byId'][$eid] ?? 0) + $seats;
             }
             $stripe['ok'] = true;
         } catch (\Throwable $e) {
@@ -154,7 +162,7 @@ class AdminCmsController extends Controller
             $eid   = $parts[0] ?? '';
             $enm   = $parts[1] ?? '';
             $orders   = $groups[$key]['orders'] ?? [];
-            $dbCount  = count($orders);
+            $dbCount  = array_sum(array_column($orders, 'seats'));
             $dbEmails = array_map(fn ($o) => strtolower(trim((string) $o['email'])), $orders);
             $sCount   = $stripe['ok'] ? ($stripe['byKey'][$key]['count'] ?? 0) : null;
             $sEmails  = $stripe['byKey'][$key]['emails'] ?? [];

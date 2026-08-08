@@ -374,7 +374,9 @@ export default {
         },
         openEventModal(eventObj, type, options) {
             if (!options || options.updateUrl !== false) this.pushEventUrl(eventObj, type);
-            this.$refs.productModal.openModal(eventObj, type);
+            // Regular classes recur and have no capacity — no ceiling to pass.
+            const spotsLeft = type === 'event' ? this.spotsLeft(eventObj.id) : null;
+            this.$refs.productModal.openModal(eventObj, type, spotsLeft);
         },
         openWaitlistModal(event, options) {
             if (!options || options.updateUrl !== false) this.pushEventUrl(event, 'event');
@@ -540,6 +542,8 @@ export default {
 
         // A popup closing (X, backdrop) should also drop the /event/... path.
         EventBus.$on('modal:closed', this.restoreUrl);
+        // Checkout hit the capacity check — the badges are behind, refresh them.
+        EventBus.$on('availability:stale', this.fetchAvailability);
         window.addEventListener('popstate', this.syncFromUrl);
 
         // Fetch CMS content (managed via /admin). Falls back to hardcoded defaults if unavailable.

@@ -46,6 +46,19 @@
                             <img src="assets/img/icon-price.svg" alt="price">
                             Price: {{ selectedEvent.price }} $ per person {{ selectedEvent.modalDiscount }}
                         </div>
+                        <!-- Groups book together: one payment, several spots. -->
+                        <div class="seats-picker d-flex align-items-center flex-wrap gap-3">
+                            <span class="seats-picker-label">Spots</span>
+                            <div class="seats-stepper d-flex align-items-center">
+                                <button type="button" class="seats-stepper-btn" @click="changeSeats(-1)"
+                                        :disabled="seats <= 1" aria-label="One spot fewer">−</button>
+                                <span class="seats-stepper-value" aria-live="polite">{{ seats }}</span>
+                                <button type="button" class="seats-stepper-btn" @click="changeSeats(1)"
+                                        :disabled="seats >= maxSeats" aria-label="One spot more">+</button>
+                            </div>
+                            <span class="seats-picker-total">Total: ${{ totalPrice }} CAD</span>
+                            <span v-if="maxSeats <= 3" class="seats-picker-left">only {{ maxSeats }} left</span>
+                        </div>
                         <div class="modal-body-description mb-0">
                             {{ selectedEvent.modalIncludes }}
                         </div>
@@ -138,6 +151,8 @@ const API_ENDPOINTS = {
     CHECKOUT: '/api/create-checkout-session'
 };
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content;
+// Matches PaymentController::MAX_SEATS_PER_ORDER — the server has the last word.
+const DEFAULT_MAX_SEATS = 12;
 
 export default {
     name: 'OrderModal',
@@ -152,6 +167,10 @@ export default {
             events: events,
             infinityEvent: infinityEvent,
             loading: false,
+            seats: 1,
+            // Ceiling for the picker. Replaced with the spots actually left when
+            // the popup is opened from a class with a known capacity.
+            maxSeats: DEFAULT_MAX_SEATS,
             selectedEvent: {},
             type: "",
             stripe: null,
@@ -170,6 +189,10 @@ export default {
                 !this.validateEmail(this.email) ||
                 this.message.trim() === '';
         },
+        totalPrice() {
+            const price = Number(this.selectedEvent.price) || 0;
+            return Math.round(price * this.seats * 100) / 100;
+        },
     },
     methods: {
         validateEmail(email) {
@@ -187,7 +210,7 @@ export default {
             const cleanDay = day ? day.replace(/,\s*$/, '') : '';
             return cleanDay ? `${moment(date).format("MMMM D")} (${cleanDay})` : moment(date).format("MMMM D");
         },
-        openModal(eventOrId, type) {
+        openModal(eventOrId, type, spotsLeft) {
             this.type = type;
             // Backwards-compat: caller may still pass an id from older code paths.
             if (typeof eventOrId === 'object' && eventOrId !== null) {
@@ -196,8 +219,18 @@ export default {
                 const list = type === 'event' ? this.events : this.infinityEvent;
                 this.selectedEvent = list.find(e => e.id === eventOrId) || {};
             }
+            // A regular class recurs and never fills up, so it keeps the default.
+            const left = Number(spotsLeft);
+            this.maxSeats = Number.isFinite(left) && left > 0
+                ? Math.min(left, DEFAULT_MAX_SEATS)
+                : DEFAULT_MAX_SEATS;
+            this.seats = 1;
             document.body.style.overflow = 'hidden';
             this.isVisible = true;
+        },
+        changeSeats(delta) {
+            const next = this.seats + delta;
+            if (next >= 1 && next <= this.maxSeats) this.seats = next;
         },
         closeModal() {
             if (this.paymentCompleted) {
@@ -214,6 +247,7 @@ export default {
             this.phone = '';
             this.email = '';
             this.message = '';
+            this.seats = 1;
             this.paymentCompleted = false;
         },
         async submitOrder() {
@@ -255,6 +289,7 @@ export default {
                 eventDate: this.getFormattedEventDateForPayload(this.selectedEvent.date, this.selectedEvent.day),
                 eventTime: this.selectedEvent.time,
                 eventLocation: this.sanitizeInput(this.selectedEvent.location),
+                seats: this.seats,
                 name: this.sanitizeInput(this.name),
                 email: this.sanitizeInput(this.email),
                 phone: this.sanitizeInput(this.phone),
@@ -277,6 +312,13 @@ export default {
 
             if (!response.ok) {
                 const errorData = await response.json();
+                // Someone else took the spots while this popup was open: correct
+                // the picker and the badges instead of leaving a stale number.
+                if (typeof errorData.spotsLeft === 'number') {
+                    this.maxSeats = Math.max(1, Math.min(errorData.spotsLeft, DEFAULT_MAX_SEATS));
+                    this.seats = Math.min(this.seats, this.maxSeats);
+                    EventBus.$emit('availability:stale');
+                }
                 throw new Error(errorData.message || 'Payment session error');
             }
 
@@ -289,11 +331,11 @@ export default {
             window.dataLayer.push({
                 event: 'begin_checkout',
                 event_id: json.eventId,
-                value: Number(this.selectedEvent.price),
+                value: this.totalPrice,
                 currency: 'CAD',
                 content_name: this.selectedEvent.eventName,
                 content_ids: [String(this.selectedEvent.id)],
-                num_items: 1,
+                num_items: this.seats,
             });
 
             return json;
@@ -572,5 +614,52 @@ export default {
 
 .cancellation-wrapper:hover .cancellation-tooltip {
     display: block;
+}
+
+.seats-picker {
+    font-family: Montserrat, serif;
+    font-size: 15px;
+    margin: 4px 0 18px;
+
+    &-label {
+        font-weight: 600;
+    }
+
+    &-total {
+        font-weight: 600;
+    }
+
+    &-left {
+        color: rgb(196, 98, 44);
+        font-size: 14px;
+    }
+}
+
+.seats-stepper {
+    border: 1px solid rgb(185, 185, 185);
+    border-radius: 50px;
+    padding: 3px;
+    gap: 4px;
+
+    &-btn {
+        width: 36px;
+        height: 36px;
+        border: unset;
+        border-radius: 50%;
+        background: rgb(255, 183, 133);
+        font-size: 20px;
+        line-height: 1;
+
+        &:disabled {
+            opacity: 35%;
+        }
+    }
+
+    &-value {
+        min-width: 32px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 17px;
+    }
 }
 </style>
