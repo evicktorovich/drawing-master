@@ -106,7 +106,7 @@ class PaymentController extends Controller
                 ->first();
 
             if (! $lead) {
-                $lead = Lead::create(array_filter([
+                $attributes = [
                     'name'           => $validated['name'],
                     'email'          => $validated['email'],
                     'phone'          => $validated['phone'] ?? null,
@@ -117,10 +117,13 @@ class PaymentController extends Controller
                     'event_time'     => $validated['eventTime'],
                     'event_location' => $validated['eventLocation'],
                     'event_price'    => $validated['price'],
-                    'seats'          => Lead::tracksSeats() ? $seats : null,
                     'payment_status' => 'pending',
                     'security_nonce' => $validated['security_nonce'],
-                ], fn ($value) => $value !== null));
+                ];
+                if (Lead::tracksSeats()) {
+                    $attributes['seats'] = $seats;
+                }
+                $lead = Lead::create($attributes);
             } elseif (Lead::tracksSeats() && $lead->seatCount() !== $seats) {
                 // Same visitor came back and changed the number of spots before paying.
                 $lead->update(['seats' => $seats]);
