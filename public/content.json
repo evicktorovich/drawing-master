@@ -16,36 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 19,
-            "eventName": "PINK FLAMINGO ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-08-07",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1783883788-img-6104.jpg",
-            "modalDescription": "Paint this elegant pink flamingo with me while learning expressive acrylic brushwork, vibrant color blending, and bold, confident strokes in a fun and relaxing class.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
-            "id": 20,
-            "eventName": "JUICY SUMMER ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-08-14",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1783883909-img-0336.png",
-            "modalDescription": "Celebrate the flavors of summer by painting a vibrant watermelon composition full of bold color, playful shapes, and fresh seasonal energy.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 17,
             "eventName": "SUN-CROWNED ACRYLIC CLASS",
             "startDate": null,
@@ -286,6 +256,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-11T01:43:24+00:00",
+    "updatedAt": "2026-08-12T20:27:50+00:00",
     "lastEventId": 30
 }
