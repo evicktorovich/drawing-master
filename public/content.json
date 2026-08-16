@@ -150,21 +150,6 @@
             "modalDescription": "Create a luminous floral still life while learning to build depth, texture, and vibrant color with acrylics.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
-        },
-        {
-            "id": 30,
-            "eventName": "LAKE LOUISE ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-09-08",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Tuesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1786412519-bdb5fdcb-eb9d-4ce3-acdb-50fa093839bd.jpeg",
-            "modalDescription": "Additional class! Create a vibrant acrylic landscape while exploring bold palette knife textures, luminous reflections, and the dramatic colors of Lake Louise at sunset.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
         }
     ],
     "regularClasses": [
@@ -256,6 +241,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-12T20:27:50+00:00",
+    "updatedAt": "2026-08-16T15:49:47+00:00",
     "lastEventId": 30
 }
