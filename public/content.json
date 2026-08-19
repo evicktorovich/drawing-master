@@ -16,22 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 17,
-            "eventName": "SUN-CROWNED ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-08-17",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Monday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1783883223-img-0338.png",
-            "modalDescription": "Create a vibrant sunflower painting while learning how to build bold shapes, rich color contrasts, and expressive texture with acrylics.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null,
-            "maxAttendees": 12
-        },
-        {
             "id": 21,
             "eventName": "VELVET SWEETNESS WATERCOLOR CLASS",
             "startDate": null,
@@ -47,21 +31,6 @@
             "modalDiscount": null
         },
         {
-            "id": 22,
-            "eventName": "ALMOST AUTUMN ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-08-28",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1783884339-img-0337.png",
-            "modalDescription": "Discover how light and color can transform a simple landscape into a painting full of warmth, depth, and atmosphere.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 23,
             "eventName": "WHEN THE SKY CRIES ACRYLIC CLASS",
             "startDate": null,
@@ -73,21 +42,6 @@
             "description": "Beginner-friendly. All supplies provided",
             "img": "assets/img/uploaded/1785729898-img-3049.png",
             "modalDescription": "Discover how to paint realistic raindrops, soft-focus lights, and atmospheric depth in acrylic.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
-            "id": 24,
-            "eventName": "SUNLIT PASSAGE WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-09-04",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1785730107-img-2158.png",
-            "modalDescription": "Capture the timeless charm of a sunlit European street through luminous watercolor washes, transparent layers, and atmospheric light.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
         },
@@ -241,6 +195,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-16T15:49:47+00:00",
+    "updatedAt": "2026-08-19T04:12:48+00:00",
     "lastEventId": 30
 }
