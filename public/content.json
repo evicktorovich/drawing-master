@@ -16,21 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 21,
-            "eventName": "VELVET SWEETNESS WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-08-21",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1783884314-img-0501.png",
-            "modalDescription": "Slow down and enjoy the beauty of watercolor as we paint sun-ripened peaches with luminous washes and delicate layers.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 23,
             "eventName": "WHEN THE SKY CRIES ACRYLIC CLASS",
             "startDate": null,
@@ -102,6 +87,36 @@
             "description": "Beginner-friendly. All supplies provided",
             "img": "assets/img/uploaded/1785730920-img-2079.png",
             "modalDescription": "Create a luminous floral still life while learning to build depth, texture, and vibrant color with acrylics.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 31,
+            "eventName": "HOT SEPTEMBER  ACRYLIC  CLASS",
+            "startDate": null,
+            "date": "2026-09-23",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Wednesday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1787543970-img-2157.png",
+            "modalDescription": "Explore the beauty of a warm September landscape through expressive acrylic textures and rich autumn colors.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
+        },
+        {
+            "id": 32,
+            "eventName": "CRYSTAL FLOW  WATERCOLOR  CLASS",
+            "startDate": null,
+            "date": "2026-09-25",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Friday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1787544272-photo-2026-08-02-19-35-04.jpg",
+            "modalDescription": "Create a fresh and atmospheric mountain river landscape in watercolor while exploring flowing washes, natural textures, and the beautiful transparency of the medium.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
         }
@@ -195,6 +210,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-19T04:12:48+00:00",
-    "lastEventId": 30
+    "updatedAt": "2026-08-24T04:08:41+00:00",
+    "lastEventId": 32
 }
