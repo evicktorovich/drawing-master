@@ -76,21 +76,6 @@
             "modalDiscount": null
         },
         {
-            "id": 29,
-            "eventName": "GATHERED IN SUMMER ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-09-30",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1785730920-img-2079.png",
-            "modalDescription": "Create a luminous floral still life while learning to build depth, texture, and vibrant color with acrylics.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 31,
             "eventName": "HOT SEPTEMBER  ACRYLIC  CLASS",
             "startDate": null,
@@ -210,6 +195,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-24T04:08:41+00:00",
+    "updatedAt": "2026-08-25T16:11:50+00:00",
     "lastEventId": 32
 }
