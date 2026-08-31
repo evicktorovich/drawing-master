@@ -16,36 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 23,
-            "eventName": "WHEN THE SKY CRIES ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-09-02",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1785729898-img-3049.png",
-            "modalDescription": "Discover how to paint realistic raindrops, soft-focus lights, and atmospheric depth in acrylic.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
-            "id": 26,
-            "eventName": "WHISPERS OF PRAGUE WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-09-11",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1785730523-img-2081.png",
-            "modalDescription": "Capture the timeless beauty of Prague in watercolor, learning to create luminous washes, soft atmospheric depth, and elegant architectural silhouettes with expressive light and reflections.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 27,
             "eventName": "INTO THE ROCKIES ACRYLIC CLASS",
             "startDate": null,
@@ -323,6 +293,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-08-29T04:24:18+00:00",
+    "updatedAt": "2026-08-31T19:52:15+00:00",
     "lastEventId": 40
 }
