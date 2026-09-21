@@ -16,36 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 27,
-            "eventName": "INTO THE ROCKIES ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-09-16",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1785730688-img-3689.jpg",
-            "modalDescription": "Discover how expressive brushstrokes, vibrant color, and dramatic light bring the Rocky Mountains to life.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
-            "id": 28,
-            "eventName": "GOLDEN HOUR WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-09-18",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1785730785-img-2161.png",
-            "modalDescription": "Capture the magic of shimmering water, glowing reflections, and the quiet beauty of a peaceful harbor in watercolor.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 31,
             "eventName": "HOT SEPTEMBER  ACRYLIC  CLASS",
             "startDate": null,
@@ -119,22 +89,6 @@
             "description": "Beginner-friendly. All supplies provided",
             "img": "assets/img/uploaded/1787975182-2025-941-x-1176-piks-2.jpg",
             "modalDescription": "Paint a striking acrylic scene featuring a majestic raven against the warm glow of an autumn landscape, exploring dramatic contrast, expressive brushwork, and rich seasonal colours.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null,
-            "maxAttendees": 10
-        },
-        {
-            "id": 37,
-            "eventName": "ONE SKY FOR TWO ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-10-21",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1787975769-2025-941-x-1176-piks-3.jpg",
-            "modalDescription": "Capture the warmth of a glowing campsite surrounded by a peaceful forest, rich sunset colours, and shimmering reflections in this atmospheric acrylic landscape.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
             "maxAttendees": 10
@@ -261,6 +215,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-09-18T23:11:40+00:00",
+    "updatedAt": "2026-09-21T22:25:26+00:00",
     "lastEventId": 40
 }
