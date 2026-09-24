@@ -128,7 +128,7 @@
         {
             "id": 41,
             "eventName": "5-WEEK PAINTING COURSE: “PLAYING WITH WATERCOLOR”",
-            "startDate": "November 2",
+            "startDate": null,
             "date": "2026-11-02",
             "time": "11:00 am - 2:00 pm",
             "day": "Mondays",
@@ -230,6 +230,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-09-23T01:11:59+00:00",
+    "updatedAt": "2026-09-24T23:48:07+00:00",
     "lastEventId": 41
 }
