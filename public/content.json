@@ -139,6 +139,21 @@
             "modalDescription": "Through guided exercises and creative projects, we’ll explore the unique properties of watercolor — transparency, flow, granulation, layering, and the interaction of water and pigment. You’ll learn a variety of techniques, discover how different effects are created, and understand when and why to use them.\n\nEach week combines experimentation with practical application, helping you gain more confidence and freedom with watercolor.\n\nIn the final class, you’ll bring everything together in your own painting, choosing and combining the techniques and effects you’ve explored throughout the course.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
+        },
+        {
+            "id": 42,
+            "eventName": "MORNING IN THE MIST ACRYLIC CLASS (additional class)",
+            "startDate": null,
+            "date": "2026-11-01",
+            "time": "12:00 pm - 3:00 pm",
+            "day": "Sunday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1790530533-img-4376-2.png",
+            "modalDescription": "Create an atmospheric acrylic landscape where layers of mist dissolve into the forested hills, while soft greens and expressive textures bring depth, quiet, and a sense of peaceful solitude.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null
         }
     ],
     "regularClasses": [
@@ -230,6 +245,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-09-24T23:48:07+00:00",
-    "lastEventId": 41
+    "updatedAt": "2026-09-27T17:36:22+00:00",
+    "lastEventId": 43
 }
