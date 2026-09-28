@@ -17,9 +17,7 @@ Route::get('/', function () {
     return view('main-page');
 });
 
-Route::get('/thank-you', function () {
-    return view('thank-you-page');
-});
+Route::get('/thank-you', [\App\Http\Controllers\ThankYouController::class, 'show']);
 
 // Shareable page per class — same site, but with that class's title, preview
 // image and sign-up popup. Slugs are built in App\Support\EventLinks.

@@ -20,7 +20,9 @@
         @include('partials.gtm-head')
 
         <!-- Purchase event → fires once on thank-you arrival. event_id = Stripe
-             session id so Meta dedupes against the server-side CAPI hit. -->
+             session id so Meta dedupes against the server-side CAPI hit; GTM also
+             sends it to GA4 as transaction_id. value / content_name / num_items
+             come from the order (ThankYouController). -->
         <script>
         (function(){
             var p = new URLSearchParams(window.location.search);
@@ -28,12 +30,15 @@
             if (!sid) return;
             var key = 'shuhai_purchase_fired_' + sid;
             try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch(e){}
+            var order = @json($purchase ?? null);
+            var push = { event: 'purchase', event_id: sid, currency: 'CAD' };
+            if (order) {
+                push.value = order.value;
+                push.content_name = order.content_name;
+                push.num_items = order.num_items;
+            }
             window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({
-                event: 'purchase',
-                event_id: sid,
-                currency: 'CAD'
-            });
+            window.dataLayer.push(push);
         })();
         </script>
 
