@@ -9,11 +9,12 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * What every email to the studio's clients shares: who is on the list, the
- * unsubscribe link, the footer, and sending through Resend.
+ * unsubscribe link, the footer, sending through Resend, and opens / clicks /
+ * bookings afterwards.
  *
- * Used by the manual Broadcast tab in /admin and by the automatic new-class
- * announcements (ClassAnnouncer), so both respect the same unsubscribes and
- * the same "who counts as a client" rules.
+ * Used by the manual Broadcast tab in /admin and by the monthly class email
+ * (ClassAnnouncer), so both respect the same unsubscribes and the same "who
+ * counts as a client" rules.
  */
 class Broadcast
 {
@@ -272,6 +273,166 @@ class Broadcast
         } catch (\Throwable $e) {
         }
         return $out;
+    }
+
+    // ---------- opens / clicks / bookings ----------
+    //
+    // Resend's own open/click tracking is a per-domain switch, and the domain is
+    // shared with AdPilot's email, so tracking lives here instead: a 1×1 image for
+    // opens and a redirect for clicks, both signed so nobody can forge them.
+    // Opens are a floor and a ceiling at once: Apple Mail loads images for the
+    // user (counts as opened even if not read), clients that block images never
+    // report. Clicks and bookings are the numbers to trust.
+
+    public static function trackToken(string $campaign, string $email): string
+    {
+        return substr(hash_hmac('sha256', $campaign . '|' . strtolower(trim($email)), (string) config('app.key')), 0, 24);
+    }
+
+    private static function trackQuery(string $campaign, string $email): array
+    {
+        return [
+            'c' => $campaign,
+            'r' => rtrim(strtr(base64_encode(strtolower(trim($email))), '+/', '-_'), '='),
+            't' => self::trackToken($campaign, $email),
+        ];
+    }
+
+    public static function openPixelUrl(string $campaign, string $email): string
+    {
+        return EventLinks::CANONICAL_BASE . '/e/o?' . http_build_query(self::trackQuery($campaign, $email));
+    }
+
+    public static function clickUrl(string $campaign, string $email, string $target): string
+    {
+        return EventLinks::CANONICAL_BASE . '/e/c?' . http_build_query(self::trackQuery($campaign, $email) + ['u' => $target]);
+    }
+
+    /** Email address from a tracking link, or null when the signature doesn't match. */
+    public static function verifyTrack(string $campaign, string $r, string $t): ?string
+    {
+        $email = base64_decode(strtr($r, '-_', '+/'), true);
+        if (!is_string($email) || !str_contains($email, '@') || $campaign === '') {
+            return null;
+        }
+        return hash_equals(self::trackToken($campaign, $email), $t) ? $email : null;
+    }
+
+    public static function recordEvent(string $campaign, string $email, string $type, ?string $url = null): void
+    {
+        try {
+            DB::table('broadcast_events')->insert([
+                'campaign'   => substr($campaign, 0, 64),
+                'email'      => strtolower($email),
+                'type'       => $type,
+                'url'        => $url !== null ? substr($url, 0, 500) : null,
+                'created_at' => now('UTC'),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('broadcast_events insert failed', ['err' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Who got a campaign, who opened, who clicked, who booked afterwards.
+     * "Booked" = a paid order on the site from the same email after the first
+     * email of the campaign went out (any class — the email is what brought them back).
+     */
+    public static function campaignStats(string $campaign): array
+    {
+        $sent = DB::table('broadcast_sent')->where('campaign', $campaign)->get(['email', 'sent_at']);
+        if ($sent->isEmpty()) {
+            return ['campaign' => $campaign, 'summary' => ['sent' => 0, 'opened' => 0, 'clicked' => 0, 'booked' => 0, 'unsubscribed' => 0], 'recipients' => []];
+        }
+        $start = $sent->min('sent_at');
+
+        $rows = [];
+        foreach ($sent as $s) {
+            $e = strtolower(trim((string) $s->email));
+            $rows[$e] = ['email' => $e, 'name' => '', 'sent_at' => (string) $s->sent_at, 'opened_at' => null, 'opens' => 0,
+                         'clicks' => 0, 'clicked' => [], 'booked' => [], 'unsubscribed' => false];
+        }
+
+        foreach (DB::table('broadcast_events')->where('campaign', $campaign)->orderBy('created_at')->get() as $ev) {
+            $e = strtolower((string) $ev->email);
+            if (!isset($rows[$e])) {
+                continue; // preview / test address
+            }
+            if ($ev->type === 'open') {
+                $rows[$e]['opens']++;
+                $rows[$e]['opened_at'] = $rows[$e]['opened_at'] ?? (string) $ev->created_at;
+            } elseif ($ev->type === 'click') {
+                $rows[$e]['clicks']++;
+                // A click proves the email was opened even when images were blocked.
+                $rows[$e]['opened_at'] = $rows[$e]['opened_at'] ?? (string) $ev->created_at;
+                $path = (string) parse_url((string) $ev->url, PHP_URL_PATH);
+                if ($path !== '' && !in_array($path, $rows[$e]['clicked'], true)) {
+                    $rows[$e]['clicked'][] = $path;
+                }
+            }
+        }
+
+        $leads = DB::table('leads')->where('payment_status', 'paid')->where('created_at', '>=', $start)
+            ->whereIn(DB::raw('lower(email)'), array_keys($rows))
+            ->orderBy('created_at')->get(['email', 'name', 'event_name', 'event_date', 'seats', 'created_at']);
+        foreach ($leads as $l) {
+            $e = strtolower(trim((string) $l->email));
+            $rows[$e]['booked'][] = trim($l->event_name . ' · ' . $l->event_date . ' · ×' . max(1, (int) ($l->seats ?? 1)));
+            if ($rows[$e]['name'] === '' && $l->name) {
+                $rows[$e]['name'] = (string) $l->name;
+            }
+        }
+
+        try {
+            foreach (DB::table('broadcast_unsubscribes')->where('created_at', '>=', $start)->pluck('email') as $u) {
+                $u = strtolower(trim((string) $u));
+                if (isset($rows[$u])) $rows[$u]['unsubscribed'] = true;
+            }
+        } catch (\Throwable $e) {
+        }
+
+        // Names from the client list when the cache is warm (never forces a Stripe call).
+        $cached = Cache::store('file')->get('cms:stripe_paid_sessions', []);
+        foreach ((array) $cached as $s) {
+            $e = strtolower((string) ($s['email'] ?? ''));
+            if (isset($rows[$e]) && $rows[$e]['name'] === '' && !empty($s['name'])) {
+                $rows[$e]['name'] = (string) $s['name'];
+            }
+        }
+
+        // DB timestamps are UTC without a zone; hand the browser real ISO times.
+        $iso = fn ($t) => $t ? \Carbon\Carbon::parse($t, 'UTC')->toIso8601String() : null;
+        foreach ($rows as &$r) {
+            $r['sent_at'] = $iso($r['sent_at']);
+            $r['opened_at'] = $iso($r['opened_at']);
+        }
+        unset($r);
+
+        $list = array_values($rows);
+        usort($list, fn ($a, $b) => [count($b['booked']), $b['clicks'], (int) !empty($b['opened_at'])] <=> [count($a['booked']), $a['clicks'], (int) !empty($a['opened_at'])]);
+
+        return [
+            'campaign' => $campaign,
+            'subject'  => DB::table('class_announcement_campaigns')->where('campaign', $campaign)->value('subject'),
+            'summary'  => [
+                'sent'         => count($list),
+                'opened'       => count(array_filter($list, fn ($r) => !empty($r['opened_at']))),
+                'clicked'      => count(array_filter($list, fn ($r) => $r['clicks'] > 0)),
+                'booked'       => count(array_filter($list, fn ($r) => !empty($r['booked']))),
+                'unsubscribed' => count(array_filter($list, fn ($r) => $r['unsubscribed'])),
+            ],
+            'recipients' => $list,
+        ];
+    }
+
+    /** Campaigns that have sent anything, newest first. */
+    public static function campaigns(): array
+    {
+        return DB::table('broadcast_sent')->select('campaign', DB::raw('count(*) as sent'), DB::raw('min(sent_at) as first_sent'))
+            ->groupBy('campaign')->orderByDesc('first_sent')->get()
+            ->map(fn ($r) => ['campaign' => $r->campaign, 'sent' => (int) $r->sent, 'first_sent' => (string) $r->first_sent,
+                              'subject' => DB::table('class_announcement_campaigns')->where('campaign', $r->campaign)->value('subject')])
+            ->all();
     }
 
     /** @param array<int,string> $emails */

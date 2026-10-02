@@ -176,6 +176,7 @@
       <button :class="{active:tab==='orders'}" @click="tab='orders'">Payments</button>
       <button :class="{active:tab==='clients'}" @click="tab='clients'">Clients</button>
       <button :class="{active:tab==='broadcast'}" @click="tab='broadcast'">Broadcast</button>
+      <button :class="{active:tab==='emailstats'}" @click="tab='emailstats'">Email stats</button>
     </nav>
     <div class="footer">
       <button @click="reload">Reload from GitHub</button>
@@ -195,6 +196,10 @@
       </button>
       <button v-else-if="tab==='clients'" class="btn btn-outline" @click="loadClients" :disabled="clientsLoading">
         <span v-if="clientsLoading" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
+        <span v-else>Refresh</span>
+      </button>
+      <button v-else-if="tab==='emailstats'" class="btn btn-outline" @click="loadEmailStats()" :disabled="esLoading">
+        <span v-if="esLoading" class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span>
         <span v-else>Refresh</span>
       </button>
       <button v-else-if="tab==='broadcast'" class="btn btn-outline" @click="loadAudience" :disabled="audienceLoading">
@@ -682,6 +687,53 @@
       </template>
     </template>
 
+    <!-- EMAIL STATS: who opened / clicked / booked after a campaign email -->
+    <template v-if="tab==='emailstats'">
+      <p class="desc" style="margin-top:-14px;">Monthly class emails (sent automatically on the 1st). <strong>Booked</strong> = paid on the site after the email went out. <strong>Opened</strong> is approximate: some apps (Apple Mail) load images on their own, others block them — clicks and bookings are the reliable numbers.</p>
+
+      <div v-if="esLoading && !esData" class="empty">
+        <span class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span> Loading…
+      </div>
+      <div v-else-if="esError" class="empty" style="color:#b53030;">{{ esError }}</div>
+      <div v-else-if="esData && !esData.campaigns.length" class="empty">No campaign emails have gone out yet.</div>
+
+      <template v-else-if="esData && esData.stats">
+        <div class="field" style="max-width:420px;">
+          <label>Campaign</label>
+          <select :value="esData.stats.campaign" @change="loadEmailStats($event.target.value)">
+            <option v-for="c in esData.campaigns" :key="c.campaign" :value="c.campaign">{{ c.subject || c.campaign }} — {{ (c.first_sent || '').slice(0,10) }}</option>
+          </select>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-n">{{ esData.stats.summary.sent }}</div><div class="stat-l">Sent</div></div>
+          <div class="stat"><div class="stat-n">{{ esData.stats.summary.opened }} <span style="font-size:14px;opacity:.55;">{{ esPct(esData.stats.summary.opened) }}</span></div><div class="stat-l">Opened</div></div>
+          <div class="stat"><div class="stat-n">{{ esData.stats.summary.clicked }} <span style="font-size:14px;opacity:.55;">{{ esPct(esData.stats.summary.clicked) }}</span></div><div class="stat-l">Clicked</div></div>
+          <div class="stat"><div class="stat-n">{{ esData.stats.summary.booked }}</div><div class="stat-l">Booked</div></div>
+          <div class="stat"><div class="stat-n">{{ esData.stats.summary.unsubscribed }}</div><div class="stat-l">Unsubscribed</div></div>
+        </div>
+
+        <div class="seg" style="margin:14px 0 4px;">
+          <button :class="{active:esFilter==='all'}" @click="esFilter='all'">All</button>
+          <button :class="{active:esFilter==='opened'}" @click="esFilter='opened'">Opened</button>
+          <button :class="{active:esFilter==='clicked'}" @click="esFilter='clicked'">Clicked</button>
+          <button :class="{active:esFilter==='booked'}" @click="esFilter='booked'">Booked</button>
+        </div>
+        <table class="ord-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Opened</th><th>Clicked</th><th>Booked</th></tr></thead>
+          <tbody>
+            <tr v-for="r in esRows" :key="r.email">
+              <td>{{ r.name || '—' }}</td>
+              <td>{{ r.email }} <span v-if="r.unsubscribed" class="ord-badge ord-soft">unsubscribed</span></td>
+              <td style="font-size:12px;white-space:nowrap;">{{ r.opened_at ? fmtTime(r.opened_at) : '—' }}</td>
+              <td style="font-size:12px;">{{ r.clicks ? r.clicked.map(p => p.replace('/event/','')).join(', ') : '—' }}</td>
+              <td style="font-size:12px;"><span v-for="b in r.booked" :key="b" class="ord-badge ord-ok" style="margin:0 4px 4px 0;">{{ b }}</span><span v-if="!r.booked.length">—</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-if="!esRows.length" class="empty" style="margin-top:10px;">Nobody in this group yet.</p>
+      </template>
+    </template>
+
   </main>
 </div>
 
@@ -787,6 +839,7 @@ createApp({
       orders: 'Payments',
       clients: 'Clients',
       broadcast: 'Broadcast',
+      emailstats: 'Email stats',
     }[tab.value]));
 
     const currentList = computed(() =>
@@ -795,7 +848,7 @@ createApp({
     );
 
     const statusText = computed(() => {
-      if (tab.value === 'orders' || tab.value === 'clients' || tab.value === 'broadcast') return '';
+      if (tab.value === 'orders' || tab.value === 'clients' || tab.value === 'broadcast' || tab.value === 'emailstats') return '';
       if (saving.value) return 'Saving…';
       if (status.value.type === 'error') return status.value.msg;
       if (status.value.type === 'saved') return 'Saved and published. Your changes will appear on the site in 3–4 minutes.';
@@ -1158,10 +1211,40 @@ createApp({
       }
     }
 
+    // ---- email stats (opens / clicks / bookings per campaign) ----
+    const esData = ref(null);
+    const esLoading = ref(false);
+    const esError = ref('');
+    const esFilter = ref('all');
+    async function loadEmailStats(campaign) {
+      esLoading.value = true;
+      esError.value = '';
+      try {
+        const sel = campaign || esData.value?.stats?.campaign || '';
+        esData.value = await api('GET', '/cms/email-stats' + (sel ? '?campaign=' + encodeURIComponent(sel) : ''));
+      } catch (e) {
+        esError.value = e.message;
+      } finally {
+        esLoading.value = false;
+      }
+    }
+    const esRows = computed(() => {
+      const list = esData.value?.stats?.recipients || [];
+      if (esFilter.value === 'opened') return list.filter(r => r.opened_at);
+      if (esFilter.value === 'clicked') return list.filter(r => r.clicks > 0);
+      if (esFilter.value === 'booked') return list.filter(r => r.booked.length);
+      return list;
+    });
+    const esPct = (n) => {
+      const sent = esData.value?.stats?.summary?.sent || 0;
+      return sent ? Math.round(n / sent * 100) + '%' : '';
+    };
+
     watch(tab, (v) => {
       if (v === 'orders' && !ordersData.value && !ordersLoading.value) loadOrders();
       if (v === 'clients' && !clientsData.value && !clientsLoading.value) loadClients();
       if (v === 'broadcast' && !audienceData.value && !audienceLoading.value) loadAudience();
+      if (v === 'emailstats' && !esData.value && !esLoading.value) loadEmailStats();
     });
 
     // ---- auth ----
@@ -1433,6 +1516,7 @@ createApp({
       filteredRecipients, bcPages, pagedRecipients, previewName, previewBody,
       downloadRecipientsCsv, copyEmail,
       bcTestEmail, bcSending, bcResult, sendTest, sendBatch,
+      esData, esLoading, esError, esFilter, esRows, esPct, loadEmailStats,
     };
   }
 }).mount('#app');

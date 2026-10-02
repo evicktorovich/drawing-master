@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
  *   dry=1             report what would happen, change nothing
  *   preview_to=EMAIL  send one [TEST] copy of the next monthly email there, change nothing
  *   force=1           send this month's email today although it isn't the 1st (catch-up)
+ *   stats=CAMPAIGN    opens / clicks / bookings of a campaign (what the admin "Email stats" tab shows)
  */
 class ClassAnnouncementController extends Controller
 {
@@ -39,6 +40,10 @@ class ClassAnnouncementController extends Controller
         }
         try {
             $announcer = new ClassAnnouncer();
+            $stats = trim((string) $request->input('stats', ''));
+            if ($stats !== '') {
+                return response()->json(\App\Support\Broadcast::campaignStats($stats));
+            }
             $previewTo = trim((string) $request->input('preview_to', ''));
             if ($previewTo !== '') {
                 if (!filter_var($previewTo, FILTER_VALIDATE_EMAIL)) {

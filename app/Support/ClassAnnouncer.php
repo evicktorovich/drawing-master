@@ -337,7 +337,7 @@ class ClassAnnouncer
         $h = fn ($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
         $rows = '';
         foreach ($events as $e) {
-            $url = $h(self::link($e, $campaign));
+            $url = $h(Broadcast::clickUrl($campaign, $email, self::link($e, $campaign)));
             $img = $h(EventLinks::imageUrl($e['img'] ?? ''));
             $desc = trim((string) ($e['description'] ?? ''));
             $rows .= '<tr>'
@@ -356,7 +356,9 @@ class ClassAnnouncer
             . '<p>' . $h(self::intro($events)) . '</p>'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:18px 0 4px;">' . $rows . '</table>'
             . '<p>' . $h(self::OUTRO) . '</p>'
-            . Broadcast::signoffHtml() . Broadcast::footerHtml($email) . '</div>';
+            . Broadcast::signoffHtml() . Broadcast::footerHtml($email)
+            . '<img src="' . $h(Broadcast::openPixelUrl($campaign, $email)) . '" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;">'
+            . '</div>';
     }
 
     public static function text(array $events, string $first, string $email, string $campaign): string

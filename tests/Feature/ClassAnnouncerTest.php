@@ -265,6 +265,80 @@ class ClassAnnouncerTest extends TestCase
         $this->assertArrayHasKey('List-Unsubscribe', $msg['headers']);
     }
 
+    /** Pull the open-pixel and the first "Book your spot" link out of a sent email. */
+    private function trackingLinks(array $message): array
+    {
+        preg_match('#<img src="(https://art-shuhai\.com/e/o\?[^"]+)"#', $message['html'], $pixel);
+        preg_match('#<a href="(https://art-shuhai\.com/e/c\?[^"]+)"#', $message['html'], $click);
+        return [html_entity_decode($pixel[1]), html_entity_decode($click[1])];
+    }
+
+    public function test_opens_clicks_and_bookings_after_the_email_show_up_in_stats(): void
+    {
+        $this->catalog([self::AUTUMN_LIGHT]);
+        $this->at('2026-11-01 10:00');
+        $this->run_();
+        $ann = collect($this->sentMessages())->firstWhere('to', ['ann@example.com']);
+        [$pixel, $click] = $this->trackingLinks($ann);
+
+        $this->get($pixel)->assertOk()->assertHeader('Content-Type', 'image/gif');
+        $this->get($click)->assertRedirect(
+            'https://art-shuhai.com/event/autumn-light-acrylic-class?utm_source=newsletter&utm_medium=email&utm_campaign=classes-2026-11&utm_content=class-44'
+        );
+        $this->at('2026-11-01 15:00');
+        Lead::create(['name' => 'Ann Lee', 'email' => 'ANN@example.com', 'phone' => '1', 'message' => '', 'event_id' => 44,
+            'event_name' => self::AUTUMN_LIGHT['eventName'], 'event_date' => 'November 4', 'event_price' => 84,
+            'seats' => 2, 'payment_status' => 'paid']);
+
+        $stats = \App\Support\Broadcast::campaignStats('classes-2026-11');
+        $this->assertSame(['sent' => 2, 'opened' => 1, 'clicked' => 1, 'booked' => 1, 'unsubscribed' => 0], $stats['summary']);
+        $row = $stats['recipients'][0];
+        $this->assertSame('ann@example.com', $row['email']);
+        $this->assertSame(['/event/autumn-light-acrylic-class'], $row['clicked']);
+        $this->assertSame(['AUTUMN LIGHT ACRYLIC CLASS · November 4 · ×2'], $row['booked']);
+    }
+
+    public function test_an_order_from_before_the_email_is_not_counted_as_booked_by_it(): void
+    {
+        $this->at('2026-10-20 12:00');
+        Lead::create(['name' => 'Bob', 'email' => 'bob@example.com', 'phone' => '1', 'message' => '', 'event_id' => 44,
+            'event_name' => self::AUTUMN_LIGHT['eventName'], 'event_date' => 'November 4', 'event_price' => 84,
+            'seats' => 1, 'payment_status' => 'paid']);
+        $this->catalog([self::AUTUMN_LIGHT]);
+        $this->at('2026-11-01 10:00');
+        $this->run_();
+
+        $this->assertSame(0, \App\Support\Broadcast::campaignStats('classes-2026-11')['summary']['booked']);
+    }
+
+    public function test_a_forged_link_records_nothing_and_never_redirects_off_site(): void
+    {
+        $this->catalog([self::AUTUMN_LIGHT]);
+        $this->at('2026-11-01 10:00');
+        $this->run_();
+        [$pixel, $click] = $this->trackingLinks($this->sentMessages()[0]);
+
+        $this->get(preg_replace('/t=[^&]+/', 't=forged', $pixel))->assertOk();
+        $offsite = preg_replace('/u=[^&]+/', 'u=' . urlencode('https://evil.example/phish'), $click);
+        $this->get($offsite)->assertRedirect('https://art-shuhai.com/#events');
+
+        $this->assertSame(0, DB::table('broadcast_events')->where('type', 'open')->count());   // forged pixel
+        $this->assertSame(1, DB::table('broadcast_events')->where('type', 'click')->count());  // signed link, sent home instead
+    }
+
+    public function test_admin_email_stats_tab_lists_campaigns(): void
+    {
+        $this->catalog([self::AUTUMN_LIGHT]);
+        $this->at('2026-11-01 10:00');
+        $this->run_();
+
+        $this->getJson('https://art-shuhai.com/cms/email-stats')->assertUnauthorized();
+        $res = $this->withSession(['cms_admin' => true])->getJson('https://art-shuhai.com/cms/email-stats')->assertOk();
+        $this->assertSame('classes-2026-11', $res->json('campaigns.0.campaign'));
+        $this->assertSame('November class at Shuhai Art Studio: Autumn Light Acrylic Class', $res->json('stats.subject'));
+        $this->assertSame(2, $res->json('stats.summary.sent'));
+    }
+
     public function test_the_endpoint_turns_away_callers_without_the_token(): void
     {
         $this->postJson('https://art-shuhai.com/api/class-announcements/run')->assertForbidden();

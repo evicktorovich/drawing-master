@@ -500,6 +500,25 @@ class AdminCmsController extends Controller
         return response()->json(['ok' => true, 'sent' => count($batch), 'remaining' => max(0, $eligible - count($batch))]);
     }
 
+    /** Email stats tab: campaigns that went out, and who opened / clicked / booked in one of them. */
+    public function emailStats(Request $request)
+    {
+        if (!$request->session()->get('cms_admin')) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+        try {
+            $campaigns = Broadcast::campaigns();
+            $selected = (string) $request->query('campaign', $campaigns[0]['campaign'] ?? '');
+            return response()->json([
+                'campaigns' => $campaigns,
+                'stats'     => $selected !== '' ? Broadcast::campaignStats($selected) : null,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('AdminCms email stats failed', ['err' => $e->getMessage()]);
+            return response()->json(['error' => 'Stats load failed: ' . substr($e->getMessage(), 0, 200)], 502);
+        }
+    }
+
     /** Public unsubscribe landing — records the email in the suppression list. */
     public function unsubscribe(Request $request)
     {

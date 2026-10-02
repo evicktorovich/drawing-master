@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * State for the monthly class email (App\Support\ClassAnnouncer): one row per month.
+ * State for the monthly class email (App\Support\ClassAnnouncer): one row per month,
+ * plus opens/clicks of campaign emails (broadcast_events).
  *
  * broadcast_sent / broadcast_unsubscribes were created by hand in June for the
  * manual Broadcast tab and never had a migration. They are created here only if
@@ -22,6 +23,17 @@ return new class extends Migration {
             $table->integer('sent')->default(0);
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
+        });
+
+        // Opens (1×1 image) and clicks (redirect) from campaign emails.
+        Schema::create('broadcast_events', function (Blueprint $table) {
+            $table->id();
+            $table->string('campaign', 64);
+            $table->string('email');
+            $table->string('type', 10);
+            $table->string('url', 500)->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->index(['campaign', 'email']);
         });
 
         if (!Schema::hasTable('broadcast_sent')) {
@@ -45,6 +57,7 @@ return new class extends Migration {
 
     public function down(): void
     {
+        Schema::dropIfExists('broadcast_events');
         Schema::dropIfExists('class_announcement_campaigns');
     }
 };
