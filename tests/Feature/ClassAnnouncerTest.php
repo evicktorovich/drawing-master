@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
- * Automatic "new classes" emails. What must hold: one email per batch of new
- * classes, never outside sending hours, never twice to the same person, never
- * more than the daily cap, never to someone who unsubscribed, and never about a
- * class nobody can book any more.
+ * Monthly class email: on the 1st, the month's classes that can still be booked.
+ * What must hold: once a month, never outside sending hours, never twice to the
+ * same person, never more than the daily cap, never to someone who unsubscribed,
+ * never about a class nobody can book any more, never other months' classes.
  */
 class ClassAnnouncerTest extends TestCase
 {
@@ -96,79 +96,97 @@ class ClassAnnouncerTest extends TestCase
         return $out;
     }
 
-    public function test_new_classes_wait_until_editing_stops_then_go_out_in_one_email(): void
-    {
-        $this->catalog([self::AUTUMN_LIGHT, self::NATURES_MIRROR]);
+    private const OCTOBER_CLASS = [
+        'id' => 40, 'eventName' => 'INDUSTRIAL SUNSET ACRYLIC CLASS', 'date' => '2026-10-30', 'day' => 'Friday',
+        'time' => '6:00 pm - 9:00 pm', 'price' => 84, 'img' => 'assets/img/uploaded/sunset.jpg',
+    ];
+    private const DECEMBER_CLASS = [
+        'id' => 52, 'eventName' => 'WINTER LIGHTS ACRYLIC CLASS', 'date' => '2026-12-04', 'day' => 'Friday',
+        'time' => '6:00 pm - 9:00 pm', 'price' => 84, 'img' => 'assets/img/uploaded/winter.jpg',
+    ];
 
-        $this->at('2026-10-05 11:00');
-        $this->assertSame('waiting', $this->run_()['action']);
+    public function test_on_the_first_at_ten_the_months_classes_go_out_in_one_email(): void
+    {
+        $this->catalog([self::OCTOBER_CLASS, self::AUTUMN_LIGHT, self::NATURES_MIRROR, self::DECEMBER_CLASS]);
+
+        $this->at('2026-11-01 09:00');
+        $this->assertSame('outside sending hours', $this->run_()['reason']);
         Http::assertNothingSent();
 
-        $this->at('2026-10-05 12:05');
+        $this->at('2026-11-01 10:00');
         $result = $this->run_();
         $this->assertSame('sent', $result['action']);
         $this->assertSame(2, $result['sent_now']);
+        $this->assertSame(2, $result['classes']);
         Http::assertSentCount(1);                       // one batch call
 
-        $messages = $this->sentMessages();
-        $this->assertCount(2, $messages);
-        foreach ($messages as $m) {
+        foreach ($this->sentMessages() as $m) {
+            $this->assertSame('November classes at Shuhai Art Studio', $m['subject']);
             $this->assertStringContainsString('Autumn Light Acrylic Class', $m['html']);
             $this->assertStringContainsString('Nature’s Mirror Watercolor Class', $m['html']);
-            $this->assertSame('New classes at Shuhai Art Studio for November', $m['subject']);
+            $this->assertStringNotContainsString('Industrial Sunset', $m['html']);   // October
+            $this->assertStringNotContainsString('Winter Lights', $m['html']);       // December
+            $this->assertStringContainsString('what’s on in November', $m['html']);
         }
+    }
 
-        $this->at('2026-10-05 13:05');
-        $this->assertSame('idle', $this->run_()['action']);
+    public function test_only_once_a_month(): void
+    {
+        $this->catalog([self::AUTUMN_LIGHT]);
+        $this->at('2026-11-01 10:00');
+        $this->run_();
+        $this->at('2026-11-01 11:00');
+        $this->assertSame('this month already sent', $this->run_()['reason']);
+        $this->at('2026-11-02 10:00');
+        $this->assertSame('this month already sent', $this->run_()['reason']);
         Http::assertSentCount(1);
     }
 
-    public function test_a_class_added_while_waiting_restarts_the_wait_and_joins_the_same_email(): void
+    public function test_nothing_goes_out_on_other_days(): void
     {
-        $this->catalog([self::AUTUMN_LIGHT]);
-        $this->at('2026-10-05 11:00');
-        $this->run_();
-
         $this->catalog([self::AUTUMN_LIGHT, self::NATURES_MIRROR]);
-        $this->at('2026-10-05 11:50');
-        $this->assertSame('waiting', $this->run_()['action']);
-
-        $this->at('2026-10-05 12:30');
-        $this->assertSame('waiting', $this->run_()['action']);   // 40 min since the second class
-
-        $this->at('2026-10-05 12:55');
-        $this->assertSame('sent', $this->run_()['action']);
-        $this->assertStringContainsString('Nature’s Mirror', $this->sentMessages()[0]['html']);
-    }
-
-    public function test_nothing_goes_out_in_the_evening_or_at_night(): void
-    {
-        $this->catalog([self::AUTUMN_LIGHT]);
-        $this->at('2026-10-05 19:30');
-        $this->run_();
-        $this->at('2026-10-05 22:00');
-        $this->assertSame('outside sending hours', $this->run_()['reason']);
-        $this->at('2026-10-06 09:00');
-        $this->assertSame('outside sending hours', $this->run_()['reason']);
+        $this->at('2026-11-02 10:00');
+        $result = $this->run_();
+        $this->assertSame('waiting for the 1st', $result['reason']);
+        $this->assertStringStartsWith('2026-12-01T10:00', $result['next']);
         Http::assertNothingSent();
-
-        $this->at('2026-10-06 10:00');
-        $this->assertSame('sent', $this->run_()['action']);
     }
 
-    public function test_sold_out_and_same_day_classes_are_never_announced(): void
+    public function test_a_missed_first_can_be_sent_by_hand(): void
+    {
+        $this->catalog([self::AUTUMN_LIGHT, self::NATURES_MIRROR]);
+        $this->at('2026-11-03 12:00');
+        $result = (new ClassAnnouncer())->run(false, true);
+        $this->assertSame('sent', $result['action']);
+        $this->at('2026-11-03 13:00');
+        $this->assertSame('this month already sent', (new ClassAnnouncer())->run(false, true)['reason']);
+    }
+
+    public function test_sold_out_and_same_day_classes_are_left_out(): void
     {
         $soldOut = array_merge(self::NATURES_MIRROR, ['maxAttendees' => 1]);
-        $today = array_merge(self::AUTUMN_LIGHT, ['id' => 60, 'eventName' => 'TODAY CLASS', 'date' => '2026-10-05']);
+        $firstOfMonth = array_merge(self::AUTUMN_LIGHT, ['id' => 60, 'eventName' => 'MORNING IN THE MIST ACRYLIC CLASS', 'date' => '2026-11-01']);
         Lead::create(['name' => 'B', 'email' => 'b@example.com', 'phone' => '1', 'message' => '', 'event_id' => 50,
             'event_name' => self::NATURES_MIRROR['eventName'], 'event_date' => 'November 25', 'event_price' => 84,
             'seats' => 1, 'payment_status' => 'paid']);
-        $this->catalog([$soldOut, $today]);
+        $this->catalog([$soldOut, $firstOfMonth, self::AUTUMN_LIGHT]);
 
-        $this->at('2026-10-05 11:00');
-        $this->assertSame('idle', $this->run_()['action']);
-        $this->at('2026-10-05 13:00');
-        $this->assertSame('idle', $this->run_()['action']);
+        $this->at('2026-11-01 10:00');
+        $this->assertSame(1, $this->run_()['classes']);
+        $html = $this->sentMessages()[0]['html'];
+        $this->assertStringContainsString('Autumn Light', $html);
+        $this->assertStringNotContainsString('Nature’s Mirror', $html);
+        $this->assertStringNotContainsString('Morning in the Mist', $html);
+        $this->assertSame('November class at Shuhai Art Studio: Autumn Light Acrylic Class', $this->sentMessages()[0]['subject']);
+    }
+
+    public function test_a_month_without_bookable_classes_sends_nothing_and_says_so_once(): void
+    {
+        $this->catalog([self::OCTOBER_CLASS, self::DECEMBER_CLASS]);
+        $this->at('2026-11-01 10:00');
+        $this->assertSame('empty', $this->run_()['action']);
+        $this->at('2026-11-01 11:00');
+        $this->assertSame('this month already sent', $this->run_()['reason']);
         Http::assertNothingSent();
     }
 
@@ -176,9 +194,7 @@ class ClassAnnouncerTest extends TestCase
     {
         DB::table('broadcast_unsubscribes')->insert(['email' => 'bob@example.com', 'created_at' => now()]);
         $this->catalog([self::AUTUMN_LIGHT]);
-        $this->at('2026-10-05 11:00');
-        $this->run_();
-        $this->at('2026-10-05 12:01');
+        $this->at('2026-11-01 10:00');
         $this->run_();
 
         $to = array_map(fn ($m) => $m['to'][0], $this->sentMessages());
@@ -194,17 +210,15 @@ class ClassAnnouncerTest extends TestCase
         $this->clients($people);
         $this->catalog([self::AUTUMN_LIGHT]);
 
-        $this->at('2026-10-05 11:00');
-        $this->run_();
-        $this->at('2026-10-05 12:01');
+        $this->at('2026-11-01 10:00');
         $first = $this->run_();
         $this->assertSame(ClassAnnouncer::DAILY_CAP, $first['sent_now']);
         $this->assertSame(5, $first['remaining']);
 
-        $this->at('2026-10-05 13:01');
+        $this->at('2026-11-01 11:00');
         $this->assertSame('daily cap reached', $this->run_()['reason']);
 
-        $this->at('2026-10-06 10:01');
+        $this->at('2026-11-02 10:00');
         $second = $this->run_();
         $this->assertSame(5, $second['sent_now']);
         $this->assertSame(0, $second['remaining']);
@@ -213,40 +227,17 @@ class ClassAnnouncerTest extends TestCase
         $this->assertCount(ClassAnnouncer::DAILY_CAP + 5, $to);
         $this->assertCount(count($to), array_unique($to));
 
-        $this->at('2026-10-06 11:01');
-        $this->assertSame('idle', $this->run_()['action']);
-    }
-
-    public function test_the_next_batch_of_classes_waits_three_days_after_the_last_email(): void
-    {
-        $this->catalog([self::AUTUMN_LIGHT]);
-        $this->at('2026-10-05 11:00');
-        $this->run_();
-        $this->at('2026-10-05 12:01');
-        $this->run_();
-
-        $this->catalog([self::AUTUMN_LIGHT, self::NATURES_MIRROR]);
-        $this->at('2026-10-06 11:00');
-        $this->run_();
-        $this->at('2026-10-06 12:30');
-        $this->assertSame('previous announcement too recent', $this->run_()['reason']);
-
-        $this->at('2026-10-08 12:30');
-        $result = $this->run_();
-        $this->assertSame('sent', $result['action']);
-        $this->assertSame(1, $result['classes']);
-        $last = array_slice($this->sentMessages(), -1)[0];
-        $this->assertStringContainsString('Nature’s Mirror', $last['html']);
-        $this->assertStringNotContainsString('Autumn Light', $last['html']);
+        $this->at('2026-11-02 11:00');
+        $this->assertSame('this month already sent', $this->run_()['reason']);
     }
 
     public function test_dry_run_changes_nothing(): void
     {
         $this->catalog([self::AUTUMN_LIGHT]);
-        $this->at('2026-10-05 11:00');
+        $this->at('2026-11-01 10:00');
         $result = (new ClassAnnouncer())->run(true);
-        $this->assertSame('waiting', $result['action']);
-        $this->assertSame(0, DB::table('class_announcements')->count());
+        $this->assertSame('would_start', $result['action']);
+        $this->assertSame(0, DB::table('class_announcement_campaigns')->count());
         Http::assertNothingSent();
     }
 

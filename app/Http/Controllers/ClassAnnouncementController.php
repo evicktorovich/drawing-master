@@ -9,11 +9,12 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * POST /api/class-announcements/run — called hourly by the Shuhai Marketing
- * droplet cron. All the decisions (what is new, sending hours, daily cap) are
- * made in ClassAnnouncer; this only checks who is calling.
+ * droplet cron. All the decisions (the 1st of the month, sending hours, daily
+ * cap) are made in ClassAnnouncer; this only checks who is calling.
  *
  *   dry=1             report what would happen, change nothing
- *   preview_to=EMAIL  send one [TEST] copy of the next email there, change nothing
+ *   preview_to=EMAIL  send one [TEST] copy of the next monthly email there, change nothing
+ *   force=1           send this month's email today although it isn't the 1st (catch-up)
  */
 class ClassAnnouncementController extends Controller
 {
@@ -45,7 +46,7 @@ class ClassAnnouncementController extends Controller
                 }
                 return response()->json($announcer->preview($previewTo));
             }
-            return response()->json($announcer->run($request->boolean('dry')));
+            return response()->json($announcer->run($request->boolean('dry'), $request->boolean('force')));
         } catch (\Throwable $e) {
             Log::error('Class announcement failed', ['err' => $e->getMessage()]);
             return response()->json(['error' => substr($e->getMessage(), 0, 300)], 500);

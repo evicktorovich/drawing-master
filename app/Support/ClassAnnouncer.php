@@ -6,190 +6,163 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Emails the studio's list when new classes go up on the site.
+ * Monthly email to the studio's list: on the 1st of every month, the classes
+ * of that month.
  *
  * The droplet cron calls run() once an hour (POST /api/class-announcements/run).
- * Each call:
- *  1. notes every upcoming class with free spots it hasn't seen before;
- *  2. finishes a campaign that hit the daily sending cap, if one is open;
- *  3. otherwise, once no new class has appeared for GRACE_MINUTES (Alevtyna
- *     usually adds a month in one sitting and fixes typos right after), sends
- *     ONE email listing every class not yet announced.
+ * On the 1st, at the first call between SEND_FROM_HOUR and SEND_UNTIL_HOUR
+ * Calgary time, ONE email goes out listing the month's one-off classes that
+ * still have free spots (classes on the 1st itself are left out: an email the
+ * morning of is too late). Jack's rule, 2026-10-02: "каждого 1-го числа месяца
+ * на текущий месяц только ивенты".
  *
- * Guard rails: only between SEND_FROM_HOUR and SEND_UNTIL_HOUR Calgary time,
- * at most one new campaign per MIN_DAYS_BETWEEN days, at most DAILY_CAP emails
- * a day (the Resend account is on the free plan — 100 a day — and is shared
- * with other senders), nobody gets the same campaign twice (broadcast_sent),
- * unsubscribes are honoured. A class that is sold out, or happens today or
- * earlier, is never announced.
+ * Guard rails: one campaign per month (unique key classes-YYYY-MM), at most
+ * DAILY_CAP emails a day (the Resend account is on the free plan — 100 a day —
+ * and shared with other senders), the rest of a long list goes the next day(s),
+ * nobody gets the same campaign twice (broadcast_sent), unsubscribes honoured.
  */
 class ClassAnnouncer
 {
     public const TZ = 'America/Edmonton';
-    public const GRACE_MINUTES = 60;
-    public const MIN_DAYS_BETWEEN = 3;
     public const SEND_FROM_HOUR = 10;
     public const SEND_UNTIL_HOUR = 19;
     public const DAILY_CAP = 80;
     public const BATCH = 100;           // Resend batch endpoint limit
 
-    /** @return array<string,mixed> summary for the cron log; never contains email addresses */
-    public function run(bool $dry = false): array
+    /**
+     * $force starts this month's email today even if it isn't the 1st (manual
+     * catch-up when the 1st was missed); sending hours and the once-a-month rule still apply.
+     *
+     * @return array<string,mixed> summary for the cron log; never contains email addresses
+     */
+    public function run(bool $dry = false, bool $force = false): array
     {
         $now = now(self::TZ);
-        $classes = $this->announceable($now);
-        if (!$dry) {
-            $this->recordSightings($classes, $now);
-        }
 
         $open = DB::table('class_announcement_campaigns')->whereNull('completed_at')->orderBy('id')->first();
         if ($open) {
-            return $this->continueCampaign($open, $classes, $now, $dry);
+            return $this->continueCampaign($open, $now, $dry);
         }
 
-        $pending = $this->pending($classes, $now);
-        if (!$pending) {
-            return ['action' => 'idle', 'reason' => 'no new classes', 'upcoming' => count($classes)];
+        $key = self::campaignKey($now);
+        if (DB::table('class_announcement_campaigns')->where('campaign', $key)->exists()) {
+            return ['action' => 'idle', 'reason' => 'this month already sent', 'campaign' => $key];
         }
-        $summary = ['classes' => $this->describe($pending)];
-
-        $newest = max(array_map(fn ($c) => Carbon::parse($c['first_seen_at'])->getTimestamp(), $pending));
-        $readyAt = Carbon::createFromTimestamp($newest, self::TZ)->addMinutes(self::GRACE_MINUTES);
-        if ($now->lt($readyAt)) {
-            return ['action' => 'waiting', 'reason' => 'new classes still being added', 'ready_at' => $readyAt->toIso8601String()] + $summary;
+        if ($now->day !== 1 && !$force) {
+            return ['action' => 'idle', 'reason' => 'waiting for the 1st',
+                    'next' => $now->copy()->startOfMonth()->addMonthNoOverflow()->setTime(self::SEND_FROM_HOUR, 0)->toIso8601String()];
         }
         if (!$this->inWindow($now)) {
-            return ['action' => 'waiting', 'reason' => 'outside sending hours'] + $summary;
+            return ['action' => 'waiting', 'reason' => 'outside sending hours', 'campaign' => $key];
         }
-        $last = DB::table('class_announcement_campaigns')->orderByDesc('started_at')->value('started_at');
-        if ($last) {
-            $next = Carbon::parse($last, 'UTC')->setTimezone(self::TZ)->addDays(self::MIN_DAYS_BETWEEN);
-            if ($now->lt($next)) {
-                return ['action' => 'waiting', 'reason' => 'previous announcement too recent', 'next_allowed' => $next->toIso8601String()] + $summary;
+
+        $events = $this->monthEvents($now, $now);
+        if (!$events) {
+            if (!$dry) {
+                // Recorded as done, so the hourly calls don't report "no classes" all day.
+                DB::table('class_announcement_campaigns')->insert([
+                    'campaign' => $key, 'event_ids' => '[]', 'subject' => null, 'sent' => 0,
+                    'started_at' => now('UTC'), 'completed_at' => now('UTC'),
+                ]);
             }
+            return ['action' => 'empty', 'campaign' => $key, 'month' => $now->format('F'),
+                    'reason' => 'no classes with free spots this month'];
         }
 
-        $key = 'classes-' . $now->format('Ymd-Hi');
-        $ids = array_map(fn ($c) => (int) $c['event']['id'], $pending);
+        $summary = ['campaign' => $key, 'classes' => count($events), 'list' => $this->describe($events)];
         if ($dry) {
-            $audience = count(Broadcast::recipients(false, false)['recipients']);
-            return ['action' => 'would_start', 'campaign' => $key, 'audience' => $audience,
-                    'subject' => self::subject(array_column($pending, 'event'))] + $summary;
+            return ['action' => 'would_start', 'audience' => count(Broadcast::recipients(false, false)['recipients']),
+                    'subject' => self::subject($events)] + $summary;
         }
 
-        $campaignId = DB::table('class_announcement_campaigns')->insertGetId([
+        $id = DB::table('class_announcement_campaigns')->insertGetId([
             'campaign'   => $key,
-            'event_ids'  => json_encode($ids),
-            'subject'    => self::subject(array_column($pending, 'event')),
+            'event_ids'  => json_encode(array_map(fn ($e) => (int) $e['id'], $events)),
+            'subject'    => self::subject($events),
             'started_at' => now('UTC'),
             'sent'       => 0,
         ]);
-        DB::table('class_announcements')->whereIn('event_id', $ids)->update(['campaign' => $key, 'announced_at' => now('UTC')]);
-
-        $campaign = DB::table('class_announcement_campaigns')->where('id', $campaignId)->first();
-        return $this->sendBatch($campaign, $classes, $now) + ['started' => true];
+        $campaign = DB::table('class_announcement_campaigns')->where('id', $id)->first();
+        return $this->sendBatch($campaign, $now) + ['started' => true, 'month' => $now->format('F')];
     }
 
-    /** One test email with what the next announcement would contain. No state is touched. */
+    /**
+     * One test email with what the next monthly email would contain. No state is touched.
+     * Before this month's email has gone out on the 1st it previews this month, otherwise next month.
+     */
     public function preview(string $to): array
     {
         $now = now(self::TZ);
-        $classes = $this->announceable($now);
-        $pending = $this->pending($classes, $now);
-        $events = $pending ? array_column($pending, 'event') : array_values($classes);
+        $month = ($now->day === 1 && !DB::table('class_announcement_campaigns')->where('campaign', self::campaignKey($now))->exists())
+            ? $now->copy()
+            : $now->copy()->startOfMonth()->addMonthNoOverflow();
+        $events = $this->monthEvents($month, $now);
         if (!$events) {
-            return ['action' => 'preview', 'error' => 'no upcoming classes with free spots'];
+            return ['action' => 'preview', 'error' => 'no classes with free spots in ' . $month->format('F Y')];
         }
         $sender = Broadcast::sender();
         if (!$sender) {
             return ['action' => 'preview', 'error' => 'Sending not configured (RESEND_API_KEY / BROADCAST_FROM)'];
         }
-        $key = 'preview-' . $now->format('Ymd-Hi');
-        $resp = Broadcast::resend($this->message($events, ['email' => $to, 'name' => ''], $key, $sender, '[TEST] '), 'emails');
+        $resp = Broadcast::resend($this->message($events, ['email' => $to, 'name' => ''], 'preview-' . $month->format('Y-m'), $sender, '[TEST] '), 'emails');
         if (!$resp->successful()) {
             throw new \RuntimeException('Resend: ' . ($resp->json('message') ?: 'HTTP ' . $resp->status()));
         }
-        return ['action' => 'preview', 'sent' => 1, 'id' => $resp->json('id'), 'classes' => $this->describe(array_map(fn ($e) => ['event' => $e], $events))];
+        return ['action' => 'preview', 'sent' => 1, 'id' => $resp->json('id'), 'month' => $month->format('F Y'), 'list' => $this->describe($events)];
+    }
+
+    public static function campaignKey(Carbon $month): string
+    {
+        return 'classes-' . $month->format('Y-m');
     }
 
     // ---------- state ----------
 
     /**
-     * Upcoming one-off classes with at least one free spot, keyed by id.
-     * Today's classes are left out: an email the morning of is too late.
+     * One-off classes of $month that can still be booked as of $now: dated after
+     * today (not today — too late for an email) and with at least one free spot.
      *
-     * @return array<int,array>
+     * @return array<int,array> sorted by date
      */
-    public function announceable(Carbon $now): array
+    public function monthEvents(Carbon $month, Carbon $now): array
     {
-        $today = $now->format('Y-m-d');
+        $ym = $month->format('Y-m');
         $out = [];
         foreach (EventLinks::catalog()['events'] as $ev) {
-            $date = (string) ($ev['date'] ?? '');
-            $id = (int) ($ev['id'] ?? 0);
-            if ($id <= 0 || $date === '' || $date === '%' || $date <= $today) {
-                continue;
+            if ((int) ($ev['id'] ?? 0) > 0 && substr((string) ($ev['date'] ?? ''), 0, 7) === $ym && $this->bookable($ev, $now)) {
+                $out[] = $ev;
             }
-            if (ClassSeats::spotsLeft($ev) <= 0) {
-                continue;
-            }
-            $out[$id] = $ev;
         }
-        uasort($out, fn ($a, $b) => strcmp((string) $a['date'], (string) $b['date']));
+        usort($out, fn ($a, $b) => strcmp((string) $a['date'], (string) $b['date']));
         return $out;
     }
 
-    private function recordSightings(array $classes, Carbon $now): void
+    private function bookable(array $ev, Carbon $now): bool
     {
-        if (!$classes) {
-            return;
+        $date = (string) ($ev['date'] ?? '');
+        if ($date === '' || $date === '%' || $date <= $now->format('Y-m-d')) {
+            return false;
         }
-        $known = DB::table('class_announcements')->whereIn('event_id', array_keys($classes))->pluck('event_id')->all();
-        $known = array_flip(array_map('intval', $known));
-        foreach ($classes as $id => $ev) {
-            if (isset($known[$id])) {
-                continue;
-            }
-            DB::table('class_announcements')->insertOrIgnore([
-                'event_id'      => $id,
-                'event_name'    => (string) ($ev['eventName'] ?? ''),
-                'event_date'    => (string) ($ev['date'] ?? ''),
-                'first_seen_at' => $now->copy()->setTimezone('UTC'),
-            ]);
-        }
+        return ClassSeats::spotsLeft($ev) > 0;
     }
 
-    /**
-     * Classes on the site that no campaign has announced yet, with when they were first seen.
-     * A class not recorded yet (dry runs, previews) counts as seen this minute.
-     *
-     * @return array<int,array{event: array, first_seen_at: string}>
-     */
-    private function pending(array $classes, Carbon $now): array
+    /** The campaign's classes that are still bookable, in date order. */
+    private function campaignEvents(object $campaign, Carbon $now): array
     {
-        if (!$classes) {
-            return [];
-        }
-        $rows = DB::table('class_announcements')->whereIn('event_id', array_keys($classes))->get()->keyBy('event_id');
+        $ids = array_flip(array_map('intval', json_decode((string) $campaign->event_ids, true) ?: []));
         $out = [];
-        foreach ($classes as $id => $ev) {
-            $row = $rows[$id] ?? null;
-            if ($row && $row->announced_at) {
-                continue;
+        foreach (EventLinks::catalog()['events'] as $ev) {
+            if (isset($ids[(int) ($ev['id'] ?? 0)]) && $this->bookable($ev, $now)) {
+                $out[] = $ev;
             }
-            $seen = $row
-                ? Carbon::parse($row->first_seen_at, 'UTC')->setTimezone(self::TZ)
-                : $now->copy();
-            $out[] = ['event' => $ev, 'first_seen_at' => $seen->toIso8601String()];
         }
+        usort($out, fn ($a, $b) => strcmp((string) $a['date'], (string) $b['date']));
         return $out;
     }
 
-    private function continueCampaign(object $campaign, array $classes, Carbon $now, bool $dry): array
+    private function continueCampaign(object $campaign, Carbon $now, bool $dry): array
     {
-        $ids = json_decode((string) $campaign->event_ids, true) ?: [];
-        $live = array_values(array_filter(array_map(fn ($id) => $classes[$id] ?? null, $ids)));
-        if (!$live) {
+        if (!$this->campaignEvents($campaign, $now)) {
             // Every class in it has passed or sold out while we waited for the cap.
             if (!$dry) {
                 DB::table('class_announcement_campaigns')->where('id', $campaign->id)->update(['completed_at' => now('UTC')]);
@@ -202,18 +175,17 @@ class ClassAnnouncer
         if ($dry) {
             return ['action' => 'would_continue', 'campaign' => $campaign->campaign, 'sent' => (int) $campaign->sent];
         }
-        return $this->sendBatch($campaign, $classes, $now);
+        return $this->sendBatch($campaign, $now);
     }
 
-    private function sendBatch(object $campaign, array $classes, Carbon $now): array
+    private function sendBatch(object $campaign, Carbon $now): array
     {
         $sender = Broadcast::sender();
         if (!$sender) {
             throw new \RuntimeException('Sending not configured (RESEND_API_KEY / BROADCAST_FROM)');
         }
-        $ids = json_decode((string) $campaign->event_ids, true) ?: [];
         // Only what is still bookable goes into the email; a class that sold out since is dropped.
-        $events = array_values(array_filter(array_map(fn ($id) => $classes[$id] ?? null, $ids)));
+        $events = $this->campaignEvents($campaign, $now);
 
         $already = Broadcast::sentIn($campaign->campaign);
         $todo = array_values(array_filter(Broadcast::recipients(false, false)['recipients'],
@@ -262,9 +234,9 @@ class ClassAnnouncer
         return $now->hour >= self::SEND_FROM_HOUR && $now->hour < self::SEND_UNTIL_HOUR;
     }
 
-    private function describe(array $pending): array
+    private function describe(array $events): array
     {
-        return array_map(fn ($c) => ($c['event']['date'] ?? '') . ' ' . ($c['event']['eventName'] ?? ''), $pending);
+        return array_map(fn ($e) => ($e['date'] ?? '') . ' ' . ($e['eventName'] ?? ''), $events);
     }
 
     // ---------- the email ----------
@@ -288,23 +260,13 @@ class ClassAnnouncer
         ];
     }
 
+    /** "November classes at Shuhai Art Studio" (month of the first class listed). */
     public static function subject(array $events): string
     {
-        if (count($events) === 1) {
-            $e = $events[0];
-            return 'New class at Shuhai Art Studio: ' . self::title((string) $e['eventName'])
-                . ', ' . Carbon::parse($e['date'])->format('M j');
-        }
-        $months = [];
-        foreach ($events as $e) {
-            $months[Carbon::parse($e['date'])->format('Y-m')] = Carbon::parse($e['date'])->format('F');
-        }
-        ksort($months);
-        $months = array_values($months);
-        $label = count($months) > 1
-            ? implode(', ', array_slice($months, 0, -1)) . ' & ' . end($months)
-            : $months[0];
-        return 'New classes at Shuhai Art Studio for ' . $label;
+        $month = Carbon::parse($events[0]['date'])->format('F');
+        return count($events) === 1
+            ? $month . ' class at Shuhai Art Studio: ' . self::title((string) $events[0]['eventName'])
+            : $month . ' classes at Shuhai Art Studio';
     }
 
     /** "AUTUMN LIGHT ACRYLIC CLASS" → "Autumn Light Acrylic Class": titles are typed in caps in the CMS. */
@@ -362,9 +324,10 @@ class ClassAnnouncer
 
     private static function intro(array $events): string
     {
+        $month = Carbon::parse($events[0]['date'])->format('F');
         return count($events) === 1
-            ? 'It’s Alevtyna from Shuhai Art Studio. A new class is open for booking, and I’d love to see you there:'
-            : 'It’s Alevtyna from Shuhai Art Studio. New classes are open for booking, and I’d love to see you at one of them:';
+            ? "It’s Alevtyna from Shuhai Art Studio. Here’s what’s on in {$month}, and I’d love to see you there:"
+            : "It’s Alevtyna from Shuhai Art Studio. Here’s what’s on in {$month}, and I’d love to see you at one of them:";
     }
 
     private const OUTRO = 'Groups are small, so if a date works for you, it’s best to book early. Hope to paint with you soon!';
