@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Broadcast;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -362,93 +363,8 @@ class AdminCmsController extends Controller
         }
 
         try {
-            $sessions = $this->stripePaidSessions($request->boolean('fresh'));
-            $cj = json_decode((string) @file_get_contents(public_path('content.json')), true) ?: [];
-            $today = now()->format('Y-m-d');
-
-            // Who's already booked on an upcoming event → exclude from re-engagement.
-            $upcomingNames = [];
-            $exclude = [];
-            foreach (($cj['events'] ?? []) as $ev) {
-                $d = (string) ($ev['date'] ?? '');
-                if ($d === '' || $d === '%' || $d < $today) {
-                    continue;
-                }
-                $nm = (string) ($ev['eventName'] ?? '');
-                if ($nm !== '') $upcomingNames[$nm] = true;
-                foreach (($ev['offlineBookings'] ?? []) as $ob) {
-                    $e = strtolower(trim((string) ($ob['email'] ?? '')));
-                    if ($e !== '') $exclude[$e] = true;
-                }
-            }
-            foreach ($sessions as $s) {
-                if ($s['email'] !== '' && isset($upcomingNames[$s['eventName']])) {
-                    $exclude[$s['email']] = true;
-                }
-            }
-
-            // Past clients: Stripe payers + named offline bookings.
-            $byEmail = [];
-            $touch = function (string $email, string $name, ?string $date, string $src) use (&$byEmail) {
-                if ($email === '') return;
-                if (!isset($byEmail[$email])) {
-                    $byEmail[$email] = ['email' => $email, 'name' => $name, 'sources' => [], 'last' => $date];
-                }
-                $byEmail[$email]['sources'][$src] = true;
-                if ($name !== '') $byEmail[$email]['name'] = $name;
-                if ($date && (empty($byEmail[$email]['last']) || $date > $byEmail[$email]['last'])) {
-                    $byEmail[$email]['last'] = $date;
-                }
-            };
-            foreach ($sessions as $s) {
-                $touch($s['email'], $s['name'], $s['date'], 'client');
-            }
-            foreach (($cj['events'] ?? []) as $ev) {
-                foreach (($ev['offlineBookings'] ?? []) as $ob) {
-                    $touch(
-                        strtolower(trim((string) ($ob['email'] ?? ''))),
-                        trim((string) ($ob['name'] ?? '')),
-                        (string) ($ob['date'] ?? '') ?: null,
-                        'client'
-                    );
-                }
-            }
-
-            // Newsletter subscribers (Google Sheet) — optional / defensive.
-            $subscriberError = null;
-            try {
-                foreach ($this->newsletterSubscribers($request->boolean('fresh')) as $sub) {
-                    $touch(strtolower(trim((string) ($sub['email'] ?? ''))), (string) ($sub['name'] ?? ''), null, 'subscriber');
-                }
-            } catch (\Throwable $e) {
-                $subscriberError = substr($e->getMessage(), 0, 200);
-                Log::warning('AdminCms audience subscriber read failed', ['err' => $e->getMessage()]);
-            }
-
-            // Suppress anyone who unsubscribed (table created out-of-band; absent → skip).
-            try {
-                foreach (\Illuminate\Support\Facades\DB::table('broadcast_unsubscribes')->pluck('email') as $u) {
-                    $exclude[strtolower(trim((string) $u))] = true;
-                }
-            } catch (\Throwable $e) {
-                // suppression table not present yet — no-op
-            }
-
-            $recipients = [];
-            foreach ($byEmail as $email => $r) {
-                if (isset($exclude[$email])) {
-                    continue;
-                }
-                $isClient = isset($r['sources']['client']);
-                $isSub    = isset($r['sources']['subscriber']);
-                $recipients[] = [
-                    'email'  => $r['email'],
-                    'name'   => $r['name'],
-                    'source' => ($isClient && $isSub) ? 'both' : ($isClient ? 'client' : 'subscriber'),
-                    'last'   => $r['last'],
-                ];
-            }
-            usort($recipients, fn ($a, $b) => strcmp((string) $b['last'], (string) $a['last']));
+            $aud = Broadcast::recipients($request->boolean('fresh'));
+            $recipients = $aud['recipients'];
 
             $bySource = ['client' => 0, 'subscriber' => 0, 'both' => 0];
             foreach ($recipients as $r) {
@@ -457,8 +373,8 @@ class AdminCmsController extends Controller
 
             return response()->json([
                 'generated_at'     => now()->toIso8601String(),
-                'summary'          => ['total' => count($recipients), 'by_source' => $bySource, 'excluded_upcoming' => count($exclude)],
-                'subscriber_error' => $subscriberError,
+                'summary'          => ['total' => count($recipients), 'by_source' => $bySource, 'excluded_upcoming' => $aud['excluded']],
+                'subscriber_error' => $aud['subscriber_error'],
                 'recipients'       => $recipients,
             ]);
         } catch (\Throwable $e) {
@@ -610,95 +526,25 @@ class AdminCmsController extends Controller
 
     private function unsubToken(string $email): string
     {
-        return substr(hash_hmac('sha256', strtolower(trim($email)), (string) config('app.key')), 0, 32);
+        return Broadcast::unsubToken($email);
     }
     private function unsubUrl(string $email): string
     {
-        $base = rtrim((string) (config('app.frontend_url') ?: config('app.url') ?: 'https://art-shuhai.com'), '/');
-        return $base . '/unsubscribe?e=' . urlencode($email) . '&t=' . $this->unsubToken($email);
+        return Broadcast::unsubUrl($email);
     }
     private function renderEmailHtml(string $body, string $firstName, string $email): string
     {
         $text   = str_replace('{name}', $firstName, $body);
         $escaped = nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
-        $unsub  = htmlspecialchars($this->unsubUrl($email), ENT_QUOTES, 'UTF-8');
-        $signoff = '<p style="margin-top:18px;">&mdash; Alevtyna, Shuhai Art Studio</p>';
-        $footer = '<hr style="border:none;border-top:1px solid #eee;margin:24px 0 16px;">'
-            . '<p style="font-size:12px;color:#999;line-height:1.5;">1324 11 Ave SW #202, Calgary &middot; a.art.shuhai@gmail.com<br>'
-            . 'You are receiving this because you took a class or subscribed at art-shuhai.com. '
-            . '<a href="' . $unsub . '" style="color:#999;">Unsubscribe</a>.</p>';
+        $signoff = Broadcast::signoffHtml();
+        $footer  = Broadcast::footerHtml($email);
         return '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:15px;line-height:1.6;color:#222;max-width:560px;margin:0 auto;">'
             . '<p>' . $escaped . '</p>' . $signoff . $footer . '</div>';
     }
 
-    /** All paid Stripe Checkout sessions (minus refunds and $0 tests), cached 10 min. */
     private function stripePaidSessions(bool $fresh = false): array
     {
-        $key = 'cms:stripe_paid_sessions';
-        if ($fresh) {
-            Cache::store('file')->forget($key);
-        }
-        return Cache::store('file')->remember($key, 600, function () {
-            $sk = config('services.stripe.secret');
-            if (!$sk) {
-                throw new \RuntimeException('STRIPE_SECRET not configured');
-            }
-            \Stripe\Stripe::setApiKey($sk);
-
-            $refunded = [];
-            foreach (\Stripe\Refund::all(['limit' => 100])->autoPagingIterator() as $r) {
-                if (!empty($r->payment_intent)) {
-                    $refunded[$r->payment_intent] = true;
-                }
-            }
-
-            $out = [];
-            foreach (\Stripe\Checkout\Session::all(['limit' => 100])->autoPagingIterator() as $s) {
-                if (($s->payment_status ?? '') !== 'paid') continue;
-                if ((int) ($s->amount_total ?? 0) <= 0) continue;
-                if (!empty($s->payment_intent) && isset($refunded[$s->payment_intent])) continue;
-                $out[] = [
-                    'email'     => strtolower(trim((string) ($s->customer_email ?? ($s->customer_details->email ?? '')))),
-                    'name'      => trim((string) ($s->customer_details->name ?? ($s->metadata->name ?? ''))),
-                    'phone'     => (string) ($s->metadata->phone ?? ''),
-                    'amount'    => (float) (($s->amount_total ?? 0) / 100),
-                    'date'      => date('Y-m-d', (int) $s->created),
-                    'eventName' => (string) ($s->metadata->eventName ?? ''),
-                ];
-            }
-            return $out;
-        });
-    }
-
-    /** Newsletter subscribers from the signup Google Sheet ([timestamp, name, email]), cached 10 min. */
-    private function newsletterSubscribers(bool $fresh = false): array
-    {
-        $sheetId  = env('GOOGLE_SHEET_ID');
-        $credPath = storage_path('app/google/credentials.json');
-        if (!$sheetId || !is_file($credPath)) {
-            return [];
-        }
-        $key = 'cms:subscribers';
-        if ($fresh) {
-            Cache::store('file')->forget($key);
-        }
-        return Cache::store('file')->remember($key, 600, function () use ($sheetId, $credPath) {
-            $client = new \Google_Client();
-            $client->setScopes([\Google_Service_Sheets::SPREADSHEETS_READONLY]);
-            $client->setAuthConfig($credPath);
-            $service = new \Google_Service_Sheets($client);
-            $rows = $service->spreadsheets_values->get($sheetId, 'A:C')->getValues() ?: [];
-            $out = [];
-            foreach ($rows as $row) {
-                $name  = $row[1] ?? '';
-                $email = $row[2] ?? '';
-                if (!is_string($email) || strpos($email, '@') === false) {
-                    continue; // header / blank / malformed
-                }
-                $out[] = ['name' => (string) $name, 'email' => (string) $email];
-            }
-            return $out;
-        });
+        return Broadcast::stripePaidSessions($fresh);
     }
 
     public function diag(Request $request)

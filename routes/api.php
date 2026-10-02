@@ -31,3 +31,6 @@ Route::post('/webhook/stripe', [StripeWebhookController::class, 'handle']);
 Route::get('/availability', [WaitlistController::class, 'availability']);
 Route::post('/waitlist/join', [WaitlistController::class, 'join'])->middleware(['throttle:5,1']);
 
+// Automatic new-class emails; hourly from the Shuhai Marketing cron (token-protected).
+Route::post('/class-announcements/run', [\App\Http\Controllers\ClassAnnouncementController::class, 'run'])->middleware(['throttle:10,1']);
+
