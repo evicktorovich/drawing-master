@@ -185,7 +185,7 @@
         },
         {
             "id": 50,
-            "eventName": "NATURE’S MIRROR WATERCOLOR CLASS",
+            "eventName": "FROZEN REFLECTIONS WATERCOLOR CLASS",
             "startDate": null,
             "date": "2026-11-25",
             "time": "6:00 pm - 9:00 pm",
@@ -303,6 +303,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-10-02T02:58:35+00:00",
+    "updatedAt": "2026-10-03T06:44:43+00:00",
     "lastEventId": 51
 }
