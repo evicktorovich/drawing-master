@@ -333,10 +333,17 @@ class Broadcast
         }
     }
 
+    /** How long after clicking a link in the email an order still counts as booked through it. */
+    public const BOOKED_WITHIN_DAYS = 14;
+
     /**
      * Who got a campaign, who opened, who clicked, who booked afterwards.
-     * "Booked" = a paid order on the site from the same email after the first
-     * email of the campaign went out (any class — the email is what brought them back).
+     * "Booked" = a paid order on the site from the same email within
+     * BOOKED_WITHIN_DAYS after that person clicked a link in this email (any class).
+     * Without the click it's not the email's doing: regulars book anyway (ads,
+     * Instagram), and with 80 emails a day the last ones reach people days later —
+     * counting from the campaign start credited the email with orders paid before
+     * the person even got it.
      */
     public static function campaignStats(string $campaign): array
     {
@@ -350,7 +357,7 @@ class Broadcast
         foreach ($sent as $s) {
             $e = strtolower(trim((string) $s->email));
             $rows[$e] = ['email' => $e, 'name' => '', 'sent_at' => (string) $s->sent_at, 'opened_at' => null, 'opens' => 0,
-                         'clicks' => 0, 'clicked' => [], 'booked' => [], 'unsubscribed' => false];
+                         'clicks' => 0, 'clicked_at' => null, 'clicked' => [], 'booked' => [], 'unsubscribed' => false];
         }
 
         foreach (DB::table('broadcast_events')->where('campaign', $campaign)->orderBy('created_at')->get() as $ev) {
@@ -363,6 +370,7 @@ class Broadcast
                 $rows[$e]['opened_at'] = $rows[$e]['opened_at'] ?? (string) $ev->created_at;
             } elseif ($ev->type === 'click') {
                 $rows[$e]['clicks']++;
+                $rows[$e]['clicked_at'] = $rows[$e]['clicked_at'] ?? (string) $ev->created_at;
                 // A click proves the email was opened even when images were blocked.
                 $rows[$e]['opened_at'] = $rows[$e]['opened_at'] ?? (string) $ev->created_at;
                 $path = (string) parse_url((string) $ev->url, PHP_URL_PATH);
@@ -377,6 +385,15 @@ class Broadcast
             ->orderBy('created_at')->get(['email', 'name', 'event_name', 'event_date', 'seats', 'created_at']);
         foreach ($leads as $l) {
             $e = strtolower(trim((string) $l->email));
+            $clickedAt = $rows[$e]['clicked_at'];
+            if ($clickedAt === null) {
+                continue;
+            }
+            $paidAt = \Carbon\Carbon::parse($l->created_at, 'UTC');
+            $from = \Carbon\Carbon::parse($clickedAt, 'UTC');
+            if ($paidAt->lt($from) || $paidAt->gt($from->copy()->addDays(self::BOOKED_WITHIN_DAYS))) {
+                continue;
+            }
             $rows[$e]['booked'][] = trim($l->event_name . ' · ' . $l->event_date . ' · ×' . max(1, (int) ($l->seats ?? 1)));
             if ($rows[$e]['name'] === '' && $l->name) {
                 $rows[$e]['name'] = (string) $l->name;
@@ -405,6 +422,7 @@ class Broadcast
         foreach ($rows as &$r) {
             $r['sent_at'] = $iso($r['sent_at']);
             $r['opened_at'] = $iso($r['opened_at']);
+            $r['clicked_at'] = $iso($r['clicked_at']);
         }
         unset($r);
 

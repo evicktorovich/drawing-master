@@ -311,6 +311,46 @@ class ClassAnnouncerTest extends TestCase
         $this->assertSame(0, \App\Support\Broadcast::campaignStats('classes-2026-11')['summary']['booked']);
     }
 
+    public function test_an_order_without_a_click_in_the_email_is_not_credited_to_it(): void
+    {
+        $this->catalog([self::AUTUMN_LIGHT]);
+        $this->at('2026-11-01 10:00');
+        $this->run_();
+        $ann = collect($this->sentMessages())->firstWhere('to', ['ann@example.com']);
+        [$pixel] = $this->trackingLinks($ann);
+        $this->get($pixel)->assertOk();
+
+        // Opened, never clicked, booked the next day through an ad — a regular, not the email.
+        $this->at('2026-11-02 19:00');
+        Lead::create(['name' => 'Ann Lee', 'email' => 'ann@example.com', 'phone' => '1', 'message' => '', 'event_id' => 44,
+            'event_name' => self::AUTUMN_LIGHT['eventName'], 'event_date' => 'November 4', 'event_price' => 84,
+            'seats' => 1, 'payment_status' => 'paid']);
+
+        $stats = \App\Support\Broadcast::campaignStats('classes-2026-11');
+        $this->assertSame(1, $stats['summary']['opened']);
+        $this->assertSame(0, $stats['summary']['booked']);
+    }
+
+    public function test_an_order_paid_before_the_click_or_long_after_it_is_not_booked_through_the_email(): void
+    {
+        $this->catalog([self::AUTUMN_LIGHT]);
+        $this->at('2026-11-01 10:00');
+        $this->run_();
+        $ann = collect($this->sentMessages())->firstWhere('to', ['ann@example.com']);
+        [, $click] = $this->trackingLinks($ann);
+        $order = ['name' => 'Ann Lee', 'email' => 'ann@example.com', 'phone' => '1', 'message' => '', 'event_id' => 44,
+                  'event_name' => self::AUTUMN_LIGHT['eventName'], 'event_price' => 84, 'seats' => 1, 'payment_status' => 'paid'];
+
+        $this->at('2026-11-01 12:00');
+        Lead::create($order + ['event_date' => 'November 4']);          // paid, then opened the email later
+        $this->at('2026-11-01 18:00');
+        $this->get($click);
+        $this->at('2026-11-20 12:00');
+        Lead::create($order + ['event_date' => 'December 9']);          // 19 days after the click
+
+        $this->assertSame(0, \App\Support\Broadcast::campaignStats('classes-2026-11')['summary']['booked']);
+    }
+
     public function test_a_forged_link_records_nothing_and_never_redirects_off_site(): void
     {
         $this->catalog([self::AUTUMN_LIGHT]);

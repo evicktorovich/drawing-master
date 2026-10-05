@@ -689,7 +689,7 @@
 
     <!-- EMAIL STATS: who opened / clicked / booked after a campaign email -->
     <template v-if="tab==='emailstats'">
-      <p class="desc" style="margin-top:-14px;">Monthly class emails (sent automatically on the 1st). <strong>Booked</strong> = paid on the site after the email went out. <strong>Opened</strong> is approximate: some apps (Apple Mail) load images on their own, others block them — clicks and bookings are the reliable numbers.</p>
+      <p class="desc" style="margin-top:-14px;">Monthly class emails (sent automatically on the 1st). <strong>Booked</strong> = clicked a link in the email, then paid on the site within 14 days. <strong>Opened</strong> is approximate: some apps (Apple Mail) load images on their own, others block them — clicks and bookings are the reliable numbers.</p>
 
       <div v-if="esLoading && !esData" class="empty">
         <span class="spinner" style="border-color:var(--ink);border-top-color:transparent;"></span> Loading…
