@@ -16,22 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 34,
-            "eventName": "AUTUMN REIGNS ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-10-09",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1787974732-2025-941-x-1176-piks-6.jpg",
-            "modalDescription": "Create a warm, atmospheric acrylic landscape filled with golden fields, rich autumn colours, and the rustic charm of the countryside.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null,
-            "maxAttendees": 10
-        },
-        {
             "id": 35,
             "eventName": "DELICATE AZURE ACRYLIC CLASS",
             "startDate": null,
@@ -91,7 +75,8 @@
             "img": "assets/img/uploaded/1790530533-img-4376-2.png",
             "modalDescription": "Create an atmospheric acrylic landscape where layers of mist dissolve into the forested hills, while soft greens and expressive textures bring depth, quiet, and a sense of peaceful solitude.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
+            "modalDiscount": null,
+            "bookedOffline": 1
         },
         {
             "id": 44,
@@ -121,7 +106,8 @@
             "img": "assets/img/uploaded/1790909042-img-7160.png",
             "modalDescription": "Create a warm autumn view of Banff surrounded by the Rocky Mountains. In this acrylic workshop, we’ll work with expressive brushstrokes, rich fall colors, and atmospheric depth to create a vibrant, painterly landscape.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
+            "modalDiscount": null,
+            "bookedOffline": 1
         },
         {
             "id": 46,
@@ -166,7 +152,8 @@
             "img": "assets/img/uploaded/1790909502-img-6618.jpg",
             "modalDescription": "Capture the glow of sunset over the ocean in this expressive acrylic workshop. We’ll explore warm and cool color contrasts, dramatic clouds, reflections, and loose brushwork to create a luminous seascape.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
+            "modalDiscount": null,
+            "bookedOffline": 1
         },
         {
             "id": 49,
@@ -211,7 +198,8 @@
             "img": "assets/img/uploaded/1790909862-img-7175-2.png",
             "modalDescription": "Create a charming winter watercolor featuring a vintage car filled with holiday gifts. Learn to paint soft snowy atmosphere, glowing light, and beautiful watercolor textures.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
+            "modalDiscount": null,
+            "bookedOffline": 1
         }
     ],
     "regularClasses": [
@@ -303,6 +291,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-10-03T06:44:43+00:00",
+    "updatedAt": "2026-10-14T15:02:00+00:00",
     "lastEventId": 51
 }
