@@ -76,7 +76,8 @@
             "modalDescription": "Create an atmospheric acrylic landscape where layers of mist dissolve into the forested hills, while soft greens and expressive textures bring depth, quiet, and a sense of peaceful solitude.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
-            "bookedOffline": null
+            "bookedOffline": null,
+            "maxAttendees": 13
         },
         {
             "id": 44,
@@ -291,6 +292,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-10-15T18:51:06+00:00",
+    "updatedAt": "2026-10-15T18:53:58+00:00",
     "lastEventId": 51
 }
