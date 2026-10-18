@@ -16,22 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 35,
-            "eventName": "DELICATE AZURE ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-10-14",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1787975107-2025-941-x-1176-piks-7.jpg",
-            "modalDescription": "Paint a charming acrylic still life featuring delicate blue cornflowers and rustic white pitchers, while exploring expressive brushwork, light, and contrast.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null,
-            "maxAttendees": 10
-        },
-        {
             "id": 40,
             "eventName": "INDUSTRIAL SUNSET ACRYLIC CLASS",
             "startDate": null,
@@ -106,22 +90,6 @@
             "modalDescription": "Discover the drama of warm firelight against a cool mountain landscape. In this acrylic workshop, we’ll explore bold color contrasts, expressive brushwork, reflections, and glowing light to create a striking atmospheric scene.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
-        },
-        {
-            "id": 48,
-            "eventName": "AFTERGLOW ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-11-18",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1790909502-img-6618.jpg",
-            "modalDescription": "Capture the glow of sunset over the ocean in this expressive acrylic workshop. We’ll explore warm and cool color contrasts, dramatic clouds, reflections, and loose brushwork to create a luminous seascape.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null,
-            "bookedOffline": 1
         },
         {
             "id": 49,
@@ -243,6 +211,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-10-17T15:01:32+00:00",
+    "updatedAt": "2026-10-18T23:14:34+00:00",
     "lastEventId": 51
 }
