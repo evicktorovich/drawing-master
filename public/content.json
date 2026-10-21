@@ -105,21 +105,6 @@
             "modalDescription": "Explore the softness and transparency of watercolor while painting delicate pink roses. We’ll focus on gentle color transitions, soft edges, and expressive washes to create a light, elegant floral composition.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
-        },
-        {
-            "id": 50,
-            "eventName": "FROZEN REFLECTIONS WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-11-25",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1790909769-img-7157.png",
-            "modalDescription": "Discover the beauty of a winter landscape glowing in the warm evening light. We’ll explore soft watercolor washes, atmospheric depth, and reflections in water to create a peaceful and luminous scene.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
         }
     ],
     "regularClasses": [
@@ -211,6 +196,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-10-18T23:14:34+00:00",
+    "updatedAt": "2026-10-21T19:18:32+00:00",
     "lastEventId": 51
 }
