@@ -202,6 +202,22 @@
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
             "maxAttendees": 11
+        },
+        {
+            "id": 59,
+            "eventName": "TROPICAL AFFIRMATIONS  TEXTURED ART WORKSHOP",
+            "startDate": null,
+            "date": "2026-12-07",
+            "time": "6:00 pm - 9:00 pm",
+            "day": "Monday",
+            "price": 84,
+            "location": "1324 11 Ave SW, #202, Calgary",
+            "description": "Beginner-friendly. All supplies provided",
+            "img": "assets/img/uploaded/1793051468-img-8544.png",
+            "modalDescription": "Discover the beauty of raised textures and elegant botanical designs! Learn to work with texture paste using piping techniques to create delicate tropical leaves, flowing lines, and decorative details. Personalize your artwork with a meaningful word or affirmation, combining rich colours and metallic accents into a unique piece of art.",
+            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
+            "modalDiscount": null,
+            "maxAttendees": 11
         }
     ],
     "regularClasses": [
@@ -293,6 +309,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-10-26T21:44:15+00:00",
-    "lastEventId": 58
+    "updatedAt": "2026-10-26T21:51:44+00:00",
+    "lastEventId": 59
 }
