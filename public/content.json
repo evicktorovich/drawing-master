@@ -212,7 +212,7 @@
             "day": "Monday - Friday",
             "price": 75,
             "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "TEMPORARILY UNAVAILABLE",
+            "description": null,
             "img": "adults.JPG",
             "modalDescription": "Creativity, dreams, inspiration - the world of art awaits you! We practice a variety of techniques, materials and subjects in our classes.",
             "modalIncludes": null,
@@ -278,6 +278,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-11-02T20:43:33+00:00",
+    "updatedAt": "2026-11-02T20:44:58+00:00",
     "lastEventId": 59
 }
