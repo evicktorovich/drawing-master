@@ -31,21 +31,6 @@
             "modalDiscount": null
         },
         {
-            "id": 47,
-            "eventName": "MOUNTAIN FIRE ACRYLIC CLASS",
-            "startDate": null,
-            "date": "2026-11-13",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Friday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1790909361-img-4617-2.jpg",
-            "modalDescription": "Discover the drama of warm firelight against a cool mountain landscape. In this acrylic workshop, we’ll explore bold color contrasts, expressive brushwork, reflections, and glowing light to create a striking atmospheric scene.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 49,
             "eventName": "PINK TENDERNESS WATERCOLOR CLASS",
             "startDate": null,
@@ -278,6 +263,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-11-02T20:44:58+00:00",
+    "updatedAt": "2026-11-03T18:40:16+00:00",
     "lastEventId": 59
 }
