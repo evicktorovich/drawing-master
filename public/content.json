@@ -25,7 +25,7 @@
             "price": 84,
             "location": "1324 11 Ave SW, #202, Calgary",
             "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1790909166-img-7166.png",
+            "img": "assets/img/uploaded/1793902065-img-8807.png",
             "modalDescription": "Explore the beauty and spontaneity of watercolor while creating vibrant, expressive poppies. We’ll work with flowing washes, soft transitions, and loose brushwork to capture the delicate character of the flowers.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null
@@ -263,6 +263,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-11-03T18:40:16+00:00",
+    "updatedAt": "2026-11-05T18:07:53+00:00",
     "lastEventId": 59
 }
