@@ -293,7 +293,7 @@ export default {
             infinityEvent: infinityEvent,
             studentWorks: true,
             availability: {},   // { [eventId]: paidCount }
-            maxAttendees: 12,
+            maxAttendees: 10,
             // Set by the /event/{slug} route (see EventPageController) — the class
             // whose popup should open on load.
             deepLink: (typeof window !== 'undefined' && window.__DEEPLINK__) || null,

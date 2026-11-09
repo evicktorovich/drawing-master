@@ -66,7 +66,7 @@ class ClassSeatsTest extends TestCase
         $this->order(['seats' => 3]);
 
         $this->assertSame(3, ClassSeats::paidFor(self::SUN_CROWNED));
-        $this->assertSame(9, ClassSeats::spotsLeft(self::SUN_CROWNED));
+        $this->assertSame(7, ClassSeats::spotsLeft(self::SUN_CROWNED));
     }
 
     public function test_spots_add_up_across_orders_of_different_sizes(): void
@@ -77,7 +77,7 @@ class ClassSeatsTest extends TestCase
         $this->order(['seats' => 2, 'email' => 'c@example.com']);
 
         $this->assertSame(6, ClassSeats::paidFor(self::SUN_CROWNED));
-        $this->assertSame(6, ClassSeats::spotsLeft(self::SUN_CROWNED));
+        $this->assertSame(4, ClassSeats::spotsLeft(self::SUN_CROWNED));
         $this->assertSame(['17' => 6], ClassSeats::paidByClass());
     }
 
@@ -104,13 +104,13 @@ class ClassSeatsTest extends TestCase
         $this->order(['seats' => 3]);
 
         $this->assertSame(5, ClassSeats::taken($event));
-        $this->assertSame(7, ClassSeats::spotsLeft($event));
+        $this->assertSame(5, ClassSeats::spotsLeft($event));
     }
 
     public function test_a_class_is_full_when_its_spots_are_all_taken(): void
     {
         $this->catalog([self::SUN_CROWNED]);
-        $this->order(['seats' => 12]);
+        $this->order(['seats' => 10]);
 
         $this->assertSame(0, ClassSeats::spotsLeft(self::SUN_CROWNED));
     }
@@ -135,7 +135,7 @@ class ClassSeatsTest extends TestCase
         ]);
 
         $this->assertSame(0, ClassSeats::paidFor(self::SUN_CROWNED));
-        $this->assertSame(12, ClassSeats::spotsLeft(self::SUN_CROWNED));
+        $this->assertSame(10, ClassSeats::spotsLeft(self::SUN_CROWNED));
     }
 
     public function test_renaming_a_class_keeps_its_orders(): void

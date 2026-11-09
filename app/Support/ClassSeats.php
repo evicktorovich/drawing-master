@@ -37,7 +37,7 @@ class ClassSeats
     {
         $capacity = (int) ($event['maxAttendees'] ?? 0);
 
-        return $capacity > 0 ? $capacity : (int) config('services.event_max_attendees', 12);
+        return $capacity > 0 ? $capacity : (int) config('services.event_max_attendees', 10);
     }
 
     /** Paid online, plus the cash / e-transfer bookings Alevtyna records in the CMS. */

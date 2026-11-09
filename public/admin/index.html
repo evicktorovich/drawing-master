@@ -290,7 +290,7 @@
           <div class="grid-2">
             <div class="field">
               <label>Max attendees (leave empty for default 12)</label>
-              <input type="number" min="1" v-model.number="ev.maxAttendees" @input="markDirty" placeholder="12">
+              <input type="number" min="1" v-model.number="ev.maxAttendees" @input="markDirty" placeholder="10">
             </div>
             <div class="field">
               <label>Booked offline (cash / Etransfer / phone)</label>
@@ -1041,7 +1041,7 @@ createApp({
       const today = todayStr();
       const rows = events.map(ev => {
         const g = mg.byId.get(ev.id) || null;
-        const cap = Number(ev.maxAttendees) > 0 ? Number(ev.maxAttendees) : (data.max || 12);
+        const cap = Number(ev.maxAttendees) > 0 ? Number(ev.maxAttendees) : (data.max || 10);
         const offline = Number(ev.bookedOffline) > 0 ? Number(ev.bookedOffline) : 0;
         const stripe = g ? (g.stripe_count != null ? g.stripe_count : g.db_count) : 0;
         const siteCount = g ? g.site_count : ((data.site_paid_by_id && data.site_paid_by_id[String(ev.id)]) || 0);

@@ -42,7 +42,7 @@ class WaitlistController extends Controller
     public function availability()
     {
         return response()->json([
-            'max'  => config('services.event_max_attendees', 12),
+            'max'  => config('services.event_max_attendees', 10),
             'paid' => (object) ClassSeats::paidByClass(),
         ]);
     }

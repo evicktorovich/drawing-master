@@ -60,7 +60,7 @@ class AdminCmsController extends Controller
         }
 
         $SEP = "\x00";
-        $max = (int) config('services.event_max_attendees', 12);
+        $max = (int) config('services.event_max_attendees', 10);
 
         // ---- DB side: paid leads, grouped by (event_id + event_name) ----
         // Counts throughout are *spots*, not orders — one order can book several.
