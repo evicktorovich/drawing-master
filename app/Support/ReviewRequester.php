@@ -326,7 +326,7 @@ class ReviewRequester
 
     private const HOPE = 'I hope you enjoyed it and are happy with what you created.';
     private const ASK = 'If you have a minute, would you leave a short review on Google? It really helps other people in Calgary find the studio.';
-    private const REPLY = 'If you feel we didn’t quite make it a 5, please reply to this email. I love hearing feedback, and it helps me make every class better.';
+    private const REPLY = 'If you feel I didn’t quite make it a 5, please reply to this email. I love hearing feedback, and it helps me make every class better.';
 
     public static function html(array $event, string $first, string $email, string $campaign, string $link): string
     {

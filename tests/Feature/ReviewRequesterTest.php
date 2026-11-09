@@ -306,7 +306,7 @@ class ReviewRequesterTest extends TestCase
         $this->assertSame('Thank you for painting with me, Ann', $m['subject']);
         $this->assertStringContainsString('Hi Ann,', $m['text']);
         $this->assertStringContainsString('Thank you for coming to Poppy Blooms Watercolor Class on Wednesday, November 11.', $m['text']);
-        $this->assertStringContainsString('If you feel we didn’t quite make it a 5, please reply to this email. I love hearing feedback', $m['text']);
+        $this->assertStringContainsString('If you feel I didn’t quite make it a 5, please reply to this email. I love hearing feedback', $m['text']);
         $this->assertArrayHasKey('List-Unsubscribe', $m['headers']);
 
         preg_match('#<a href="(https://art-shuhai\.com/e/c\?[^"]+)"#', $m['html'], $click);
