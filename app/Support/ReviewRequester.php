@@ -28,8 +28,8 @@ use Illuminate\Support\Facades\Schema;
  * the daily cap is shared with the class email (Resend free plan).
  *
  * Everyone gets the same review link. Google does not allow asking only happy
- * clients for reviews ("review gating"), so anyone unhappy is invited to reply
- * to the email instead — the reply goes to the studio's inbox.
+ * clients for reviews ("review gating"); anyone who wouldn't give a 5 is invited
+ * to reply as well (Jack's wording, 2026-11-09) — the reply goes to the studio's inbox.
  */
 class ReviewRequester
 {
@@ -110,6 +110,23 @@ class ReviewRequester
             throw new \RuntimeException('Resend: ' . ($resp->json('message') ?: 'HTTP ' . $resp->status()));
         }
         return ['action' => 'preview', 'sent' => 1, 'id' => $resp->json('id'), 'class' => (string) ($event['eventName'] ?? '')];
+    }
+
+    /**
+     * Review emails due now and not sent yet. The class email leaves this many
+     * out of its share of the daily cap, so reviews are never squeezed out.
+     */
+    public static function waitingCount(): int
+    {
+        if (!self::enabled()) {
+            return 0;
+        }
+        try {
+            $self = new self();
+            return count($self->people($self->dueClasses(now(ClassAnnouncer::TZ))));
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     public static function enabled(): bool
@@ -309,7 +326,7 @@ class ReviewRequester
 
     private const HOPE = 'I hope you enjoyed it and are happy with what you created.';
     private const ASK = 'If you have a minute, would you leave a short review on Google? It really helps other people in Calgary find the studio.';
-    private const REPLY = 'And if something wasn’t quite right, just reply to this email. I read every message and would love to make the next class even better.';
+    private const REPLY = 'If you feel we didn’t quite make it a 5, please reply to this email. I love hearing feedback, and it helps me make every class better.';
 
     public static function html(array $event, string $first, string $email, string $campaign, string $link): string
     {

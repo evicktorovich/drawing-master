@@ -236,6 +236,60 @@ class ReviewRequesterTest extends TestCase
         $this->assertSame(['ann@example.com'], $this->sentTo());
     }
 
+    /** 100 past clients for the monthly class email (cached, so no Stripe call). */
+    private function hundredClients(): void
+    {
+        $sessions = [];
+        for ($i = 0; $i < 100; $i++) {
+            $sessions[] = ['email' => "client{$i}@example.com", 'name' => "Client {$i}", 'phone' => '', 'amount' => 84.0,
+                           'date' => '2026-06-01', 'eventName' => 'OLD CLASS'];
+        }
+        Cache::store('file')->forever('cms:stripe_paid_sessions', $sessions);
+    }
+
+    private const OCT28 = [
+        'id' => 39, 'eventName' => 'HARVEST MOON ACRYLIC CLASS', 'date' => '2026-10-28', 'day' => 'Wednesday',
+        'time' => '6:00 pm - 9:00 pm', 'price' => 84, 'img' => 'assets/img/uploaded/moon.jpg',
+    ];
+
+    private function threeAskedAboutOct28(): void
+    {
+        $this->catalog([self::OCT28, self::POPPY]);
+        $this->at('2026-10-20 12:00');
+        foreach (['ann', 'bob', 'cat'] as $n) {
+            $this->paid("{$n}@example.com", ucfirst($n), self::OCT28, 'October 28 (Wednesday)');
+        }
+        $this->at('2026-10-28 12:00');
+        (new ReviewRequester())->run();          // noted on its day
+        $this->hundredClients();
+    }
+
+    public function test_on_a_class_email_day_reviews_go_first_and_the_class_email_takes_the_rest(): void
+    {
+        config(['services.class_announce_token_sha256' => hash('sha256', 'test-token')]);
+        $this->threeAskedAboutOct28();
+
+        $this->at('2026-11-01 10:07');
+        $res = $this->postJson('https://art-shuhai.com/api/class-announcements/run', [], ['X-Announce-Token' => 'test-token'])->assertOk();
+        $this->assertSame(3, $res->json('reviews.sent_now'));
+        $this->assertSame(77, $res->json('sent_now'));            // 80 a day in all
+        $this->assertSame(23, $res->json('remaining'));
+        $this->assertSame(80, DB::table('broadcast_sent')->count());
+    }
+
+    public function test_the_class_email_leaves_room_for_review_emails_still_waiting(): void
+    {
+        $this->threeAskedAboutOct28();
+
+        $this->at('2026-11-01 10:07');
+        $res = (new \App\Support\ClassAnnouncer())->run();       // reviews not sent yet this hour
+        $this->assertSame(77, $res['sent_now']);
+        $this->assertSame(3, ReviewRequester::waitingCount());
+
+        $this->assertSame(3, (new ReviewRequester())->run()['sent_now']);
+        $this->assertSame(0, ReviewRequester::waitingCount());
+    }
+
     public function test_the_email_and_its_link(): void
     {
         $this->catalog([self::POPPY]);
@@ -252,7 +306,7 @@ class ReviewRequesterTest extends TestCase
         $this->assertSame('Thank you for painting with me, Ann', $m['subject']);
         $this->assertStringContainsString('Hi Ann,', $m['text']);
         $this->assertStringContainsString('Thank you for coming to Poppy Blooms Watercolor Class on Wednesday, November 11.', $m['text']);
-        $this->assertStringContainsString('just reply to this email', $m['text']);
+        $this->assertStringContainsString('If you feel we didn’t quite make it a 5, please reply to this email. I love hearing feedback', $m['text']);
         $this->assertArrayHasKey('List-Unsubscribe', $m['headers']);
 
         preg_match('#<a href="(https://art-shuhai\.com/e/c\?[^"]+)"#', $m['html'], $click);

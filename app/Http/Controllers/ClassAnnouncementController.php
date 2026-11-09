@@ -66,15 +66,18 @@ class ClassAnnouncementController extends Controller
                 }
                 return response()->json((new ReviewRequester())->preview($reviewPreviewTo));
             }
-            $result = $announcer->run($request->boolean('dry'), $request->boolean('force'));
-            // Review requests ride the same hourly call. Their own failure must not
-            // look like a failed class email, so it is reported inside 'reviews'.
+            // Review requests ride the same hourly call and go FIRST: on a class-email
+            // day the class email takes only what is left of the daily cap (Jack,
+            // 2026-11-09). Their own failure must not look like a failed class email,
+            // so it is reported inside 'reviews'.
             try {
-                $result['reviews'] = (new ReviewRequester())->run($request->boolean('dry'));
+                $reviews = (new ReviewRequester())->run($request->boolean('dry'));
             } catch (\Throwable $e) {
                 Log::error('Review requests failed', ['err' => $e->getMessage()]);
-                $result['reviews'] = ['action' => 'error', 'error' => substr($e->getMessage(), 0, 300)];
+                $reviews = ['action' => 'error', 'error' => substr($e->getMessage(), 0, 300)];
             }
+            $result = $announcer->run($request->boolean('dry'), $request->boolean('force'));
+            $result['reviews'] = $reviews;
             return response()->json($result);
         } catch (\Throwable $e) {
             Log::error('Class announcement failed', ['err' => $e->getMessage()]);

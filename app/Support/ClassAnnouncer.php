@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
  * DAILY_CAP emails a day (the Resend account is on the free plan — 100 a day —
  * and shared with other senders), the rest of a long list goes the next day(s),
  * nobody gets the same campaign twice (broadcast_sent), unsubscribes honoured.
+ * Review requests (ReviewRequester) share the cap and go first: on a class-email
+ * day this email takes only what they leave (Jack, 2026-11-09).
  */
 class ClassAnnouncer
 {
@@ -191,7 +193,9 @@ class ClassAnnouncer
         $todo = array_values(array_filter(Broadcast::recipients(false, false)['recipients'],
             fn ($r) => !isset($already[strtolower($r['email'])])));
 
-        $capLeft = max(0, self::DAILY_CAP - self::sentToday($now));
+        // Review requests come first: whatever of them is still waiting today
+        // (e.g. a failed attempt to be retried next hour) is kept out of the class email's share.
+        $capLeft = max(0, self::DAILY_CAP - self::sentToday($now) - ReviewRequester::waitingCount());
         $batch = array_slice($todo, 0, min(self::BATCH, $capLeft));
         $base = ['campaign' => $campaign->campaign, 'classes' => count($events)];
 
