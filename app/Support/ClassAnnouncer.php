@@ -191,7 +191,7 @@ class ClassAnnouncer
         $todo = array_values(array_filter(Broadcast::recipients(false, false)['recipients'],
             fn ($r) => !isset($already[strtolower($r['email'])])));
 
-        $capLeft = max(0, self::DAILY_CAP - $this->sentToday($now));
+        $capLeft = max(0, self::DAILY_CAP - self::sentToday($now));
         $batch = array_slice($todo, 0, min(self::BATCH, $capLeft));
         $base = ['campaign' => $campaign->campaign, 'classes' => count($events)];
 
@@ -218,7 +218,8 @@ class ClassAnnouncer
         return ['action' => 'sent', 'sent_now' => count($batch), 'sent' => $sent, 'remaining' => max(0, $remaining)] + $base;
     }
 
-    private function sentToday(Carbon $now): int
+    /** Emails of every campaign sent since midnight Calgary — the daily cap is shared (review requests too). */
+    public static function sentToday(Carbon $now): int
     {
         try {
             return DB::table('broadcast_sent')

@@ -24,6 +24,17 @@ Route::get('/thank-you', [\App\Http\Controllers\ThankYouController::class, 'show
 Route::get('/event/{slug}', [\App\Http\Controllers\EventPageController::class, 'show'])
     ->where('slug', '[^/]+');
 
+// Pages for people searching Google for classes in Calgary: real text in the
+// HTML, plus the upcoming classes of that kind straight from content.json.
+foreach (array_keys(\App\Http\Controllers\ClassPagesController::PAGES) as $page) {
+    Route::get('/' . $page, [\App\Http\Controllers\ClassPagesController::class, 'show'])->defaults('page', $page);
+}
+Route::get('/sitemap.xml', [\App\Http\Controllers\ClassPagesController::class, 'sitemap']);
+
+// Short link to the studio's Google review form — used by the review-request
+// email (App\Support\ReviewRequester) and fine to print on a card or QR code.
+Route::get('/review', fn () => redirect()->away(\App\Support\ReviewRequester::GOOGLE_REVIEW_URL, 302));
+
 // Public unsubscribe landing for broadcast emails (CASL). GET = footer link / header
 // click; POST = RFC 8058 one-click (List-Unsubscribe-Post). Params read from query.
 Route::match(['get', 'post'], '/unsubscribe', [\App\Http\Controllers\AdminCmsController::class, 'unsubscribe']);

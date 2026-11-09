@@ -1,2 +1,4 @@
 User-agent: *
 Disallow:
+
+Sitemap: https://art-shuhai.com/sitemap.xml

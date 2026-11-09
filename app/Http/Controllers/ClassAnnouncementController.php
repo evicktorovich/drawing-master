@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\ClassAnnouncer;
+use App\Support\ReviewRequester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,11 @@ use Illuminate\Support\Facades\Log;
  *   preview_to=EMAIL  send one [TEST] copy of the next monthly email there, change nothing
  *   force=1           send this month's email today although it isn't the 1st (catch-up)
  *   stats=CAMPAIGN    opens / clicks / bookings of a campaign (what the admin "Email stats" tab shows)
+ *
+ * The same call also runs the review requests (App\Support\ReviewRequester) and
+ * reports them under 'reviews'; dry=1 applies to them too.
+ *   reviews_preview_to=EMAIL  one [TEST] review-request email there, change nothing
+ *   stats=reviews             who got it / opened / clicked "Leave a review"
  */
 class ClassAnnouncementController extends Controller
 {
@@ -29,7 +35,9 @@ class ClassAnnouncementController extends Controller
     public function run(Request $request)
     {
         $token = (string) $request->header('X-Announce-Token', '');
-        if ($token === '' || !hash_equals(self::TOKEN_SHA256, hash('sha256', $token))) {
+        // The config key exists only so tests can call the endpoint with a token of their own.
+        $expected = (string) config('services.class_announce_token_sha256', self::TOKEN_SHA256);
+        if ($token === '' || !hash_equals($expected, hash('sha256', $token))) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
@@ -51,7 +59,23 @@ class ClassAnnouncementController extends Controller
                 }
                 return response()->json($announcer->preview($previewTo));
             }
-            return response()->json($announcer->run($request->boolean('dry'), $request->boolean('force')));
+            $reviewPreviewTo = trim((string) $request->input('reviews_preview_to', ''));
+            if ($reviewPreviewTo !== '') {
+                if (!filter_var($reviewPreviewTo, FILTER_VALIDATE_EMAIL)) {
+                    return response()->json(['error' => 'reviews_preview_to is not an email'], 422);
+                }
+                return response()->json((new ReviewRequester())->preview($reviewPreviewTo));
+            }
+            $result = $announcer->run($request->boolean('dry'), $request->boolean('force'));
+            // Review requests ride the same hourly call. Their own failure must not
+            // look like a failed class email, so it is reported inside 'reviews'.
+            try {
+                $result['reviews'] = (new ReviewRequester())->run($request->boolean('dry'));
+            } catch (\Throwable $e) {
+                Log::error('Review requests failed', ['err' => $e->getMessage()]);
+                $result['reviews'] = ['action' => 'error', 'error' => substr($e->getMessage(), 0, 300)];
+            }
+            return response()->json($result);
         } catch (\Throwable $e) {
             Log::error('Class announcement failed', ['err' => $e->getMessage()]);
             return response()->json(['error' => substr($e->getMessage(), 0, 300)], 500);

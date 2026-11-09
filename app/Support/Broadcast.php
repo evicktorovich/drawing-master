@@ -139,19 +139,14 @@ class Broadcast
         if ($fresh) {
             Cache::store('file')->forget($key);
         }
-        return Cache::store('file')->remember($key, 600, function () {
+        return Cache::store('file')->remember($key, 600, function () use ($fresh) {
             $sk = config('services.stripe.secret');
             if (!$sk) {
                 throw new \RuntimeException('STRIPE_SECRET not configured');
             }
             \Stripe\Stripe::setApiKey($sk);
 
-            $refunded = [];
-            foreach (\Stripe\Refund::all(['limit' => 100])->autoPagingIterator() as $r) {
-                if (!empty($r->payment_intent)) {
-                    $refunded[$r->payment_intent] = true;
-                }
-            }
+            $refunded = self::refundedIntents($fresh);
 
             $out = [];
             foreach (\Stripe\Checkout\Session::all(['limit' => 100])->autoPagingIterator() as $s) {
@@ -168,6 +163,34 @@ class Broadcast
                 ];
             }
             return $out;
+        });
+    }
+
+    /**
+     * Payment intents Stripe has refunded (fully or partly), cached 10 min.
+     *
+     * @return array<string,bool>
+     */
+    public static function refundedIntents(bool $fresh = false): array
+    {
+        $key = 'cms:stripe_refunded_intents';
+        if ($fresh) {
+            Cache::store('file')->forget($key);
+        }
+        return Cache::store('file')->remember($key, 600, function () {
+            $sk = config('services.stripe.secret');
+            if (!$sk) {
+                throw new \RuntimeException('STRIPE_SECRET not configured');
+            }
+            \Stripe\Stripe::setApiKey($sk);
+
+            $refunded = [];
+            foreach (\Stripe\Refund::all(['limit' => 100])->autoPagingIterator() as $r) {
+                if (!empty($r->payment_intent)) {
+                    $refunded[(string) $r->payment_intent] = true;
+                }
+            }
+            return $refunded;
         });
     }
 

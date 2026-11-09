@@ -10,8 +10,8 @@
             // Defaults for "/"; the /event/{slug} route overrides them per class.
             $base = \App\Support\EventLinks::CANONICAL_BASE;
             $meta = array_merge([
-                'title' => 'Art Classes with Alevtyna',
-                'description' => 'Unlock creativity with inspiring art workshops for all skill levels.',
+                'title' => 'Art Classes in Calgary with Alevtyna | Shuhai Art Studio',
+                'description' => 'Painting and drawing classes for adults in Calgary: watercolor and acrylic workshops, regular classes and private lessons. Beginner-friendly, all materials included.',
                 'image' => $base . '/assets/img/bg-main-banner.webp',
                 'url' => $base . '/',
             ], $meta ?? []);
@@ -57,6 +57,19 @@
         <main-page></main-page>
         <footer-component></footer-component>
     </div>
+
+    {{-- Plain links under the app: people and Google both get to the class pages (ClassPagesController). --}}
+    <nav class="class-links" aria-label="Classes in Calgary">
+        <span>Classes in Calgary:</span>
+        @foreach (\App\Http\Controllers\ClassPagesController::PAGES as $slug => $p)
+            <a href="/{{ $slug }}">{{ $p['h1'] }}</a>
+        @endforeach
+    </nav>
+    <style>
+        .class-links { position: relative; z-index: 1; background: #2d2d2d; color: #ccc; font-family: Montserrat, sans-serif; font-size: 14px; line-height: 1.5; padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: center; }
+        .class-links a { color: #fff; text-decoration: none; }
+        .class-links a:hover { text-decoration: underline; }
+    </style>
 
     @vite('resources/js/app.js')
     </body>

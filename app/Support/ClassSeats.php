@@ -96,6 +96,30 @@ class ClassSeats
         return $taken;
     }
 
+    /**
+     * Did this paid order book the class that ran on $event's date?
+     *
+     * Stricter than orderBelongsTo(), which keeps doubtful orders so a seat is
+     * never oversold. Here a doubtful order must NOT pass: the answer decides
+     * whether someone gets "thank you for coming" about a class they never
+     * attended. Orders carry the date as "November 11 (Wednesday)", without a
+     * year, so the date must match when the order has one; the title is the
+     * fallback only for orders without a date.
+     */
+    public static function orderIsFor(Lead $order, array $event): bool
+    {
+        if ((int) $order->event_id !== (int) ($event['id'] ?? 0)) {
+            return false;
+        }
+        $orderDate = self::dateKey((string) $order->event_date);
+        if ($orderDate !== '') {
+            return $orderDate === self::dateKey(self::dateLabel($event));
+        }
+        $orderName = self::textKey((string) $order->event_name);
+
+        return $orderName !== '' && $orderName === self::textKey((string) ($event['eventName'] ?? ''));
+    }
+
     /** @return \Illuminate\Database\Eloquent\Collection<int,Lead> */
     private static function paidOrders(?int $eventId = null)
     {
