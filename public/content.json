@@ -16,21 +16,6 @@
             "modalDiscount": null
         },
         {
-            "id": 46,
-            "eventName": "POPPY BLOOMS WATERCOLOR CLASS",
-            "startDate": null,
-            "date": "2026-11-11",
-            "time": "6:00 pm - 9:00 pm",
-            "day": "Wednesday",
-            "price": 84,
-            "location": "1324 11 Ave SW, #202, Calgary",
-            "description": "Beginner-friendly. All supplies provided",
-            "img": "assets/img/uploaded/1793902065-img-8807.png",
-            "modalDescription": "Explore the beauty and spontaneity of watercolor while creating vibrant, expressive poppies. We’ll work with flowing washes, soft transitions, and loose brushwork to capture the delicate character of the flowers.",
-            "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
-        },
-        {
             "id": 49,
             "eventName": "PINK TENDERNESS WATERCOLOR CLASS",
             "startDate": null,
@@ -75,7 +60,8 @@
             "modalDescription": "Create your own collection of charming Christmas postcards filled with festive warmth and winter magic. Experiment with watercolor techniques, playful illustrations, and delicate details. Each handmade postcard will be paired with a beautiful coloured envelope, ready to share with someone special.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 10,
+            "bookedOffline": 1
         },
         {
             "id": 54,
@@ -139,7 +125,8 @@
             "modalDescription": "Capture the quiet beauty of a winter forest illuminated by golden sunlight. Explore expressive brushstrokes, rich textures, and the contrast between warm golden light and cool winter shadows.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
             "modalDiscount": null,
-            "maxAttendees": 10
+            "maxAttendees": 10,
+            "bookedOffline": 2
         },
         {
             "id": 58,
@@ -247,6 +234,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-11-08T15:19:12+00:00",
+    "updatedAt": "2026-11-12T04:57:01+00:00",
     "lastEventId": 59
 }
