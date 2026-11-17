@@ -150,9 +150,39 @@ class EventPageController extends Controller
                 'availability' => 'https://schema.org/InStock',
                 'url' => $url,
             ];
+            $listed = $this->listedAt($event, $start);
+            if ($listed !== null) {
+                $data['offers']['validFrom'] = $listed;
+            }
         }
 
         return json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * When the class went on sale, for the offer's validFrom.
+     *
+     * The admin stamps the upload time into the image name
+     * ("assets/img/uploaded/1793049233-img-6632.jpg"), and the image is added
+     * together with the class, so that is the moment it appeared on the site.
+     * No stamp, or a stamp after the class starts — leave the field out.
+     */
+    private function listedAt(array $event, string $start): ?string
+    {
+        if (!preg_match('~(?:^|/)(\d{10})-[^/]*$~', (string) ($event['img'] ?? ''), $m)) {
+            return null;
+        }
+
+        try {
+            $listed = Carbon::createFromTimestamp((int) $m[1], 'America/Edmonton');
+            if ($listed->greaterThan(Carbon::parse($start))) {
+                return null;
+            }
+
+            return $listed->toIso8601String();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

@@ -28,7 +28,7 @@ class ClassPagesTest extends TestCase
                  'time' => '6:00 pm - 9:00 pm', 'price' => 84, 'img' => 'assets/img/uploaded/poppy.png',
                  'modalDescription' => "Explore the beauty and spontaneity of watercolor.\n\nSecond paragraph."],
                 ['id' => 52, 'eventName' => 'SUNSET GLOW ACRYLIC WORKSHOP', 'date' => '2026-12-02', 'day' => 'Wednesday',
-                 'time' => '6:00 pm - 9:00 pm', 'price' => 84, 'img' => 'assets/img/uploaded/sunset.jpg'],
+                 'time' => '6:00 pm - 9:00 pm', 'price' => 84, 'img' => 'assets/img/uploaded/1793049233-img-6632.jpg'],
                 ['id' => 40, 'eventName' => 'OLD WATERCOLOR CLASS', 'date' => '2026-10-30', 'day' => 'Friday',
                  'time' => '6:00 pm - 9:00 pm', 'price' => 84, 'img' => 'assets/img/uploaded/old.jpg'],
                 ['id' => 41, 'eventName' => '5-WEEK PAINTING COURSE: “PLAYING WITH WATERCOLOR”', 'date' => '2026-11-30', 'day' => 'Mondays',
@@ -59,6 +59,21 @@ class ClassPagesTest extends TestCase
                 ->assertSee('Good to see you here! My name is Alevtyna.')
                 ->assertSee('Do I need to bring my own materials or supplies?');
         }
+    }
+
+    public function test_event_offer_says_when_the_class_went_on_sale(): void
+    {
+        $this->catalog();
+        $this->withoutVite(); // the event page is the app shell; no front-end build in tests
+
+        // Image uploaded with the class: 1793049233 = Oct 26, 2026 15:13:53 in Calgary.
+        $this->get('https://art-shuhai.com/event/sunset-glow-acrylic-workshop')->assertOk()
+            ->assertSee('"validFrom":"2026-10-26T15:13:53-06:00"', false);
+
+        // No upload stamp in the image name — leave the field out rather than guess.
+        $this->get('https://art-shuhai.com/event/poppy-blooms-watercolor-class')->assertOk()
+            ->assertSee('"priceCurrency":"CAD"', false)
+            ->assertDontSee('validFrom', false);
     }
 
     public function test_a_page_lists_only_upcoming_classes_of_its_kind(): void
