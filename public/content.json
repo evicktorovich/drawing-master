@@ -109,7 +109,8 @@
             "img": "assets/img/uploaded/1794537119-img-8523.png",
             "modalDescription": "Capture the quiet beauty of a winter forest illuminated by golden sunlight. Explore expressive brushstrokes, rich textures, and the contrast between warm golden light and cool winter shadows.",
             "modalIncludes": "All art materials provided; step-by-step instruction and individual guidance; сomplimentary snacks and refreshments; еake home your finished artwork at the end of the workshop.",
-            "modalDiscount": null
+            "modalDiscount": null,
+            "bookedOffline": 2
         }
     ],
     "regularClasses": [
@@ -201,6 +202,6 @@
         "footerEmail": "a.art.shuhai@gmail.com",
         "footerAddress": "1324 11 Ave, SW, #202, Calgary"
     },
-    "updatedAt": "2026-11-16T00:00:30+00:00",
+    "updatedAt": "2026-11-18T00:38:21+00:00",
     "lastEventId": 60
 }
